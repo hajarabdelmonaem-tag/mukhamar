@@ -1,0 +1,45 @@
+<?php
+
+namespace App\Http\Requests\Api\V1;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+class UpdatePasswordRequest extends FormRequest
+{
+    /**
+     * Determine if the user is authorized to make this request.
+     */
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array<string, mixed>
+     */
+    public function rules(): array
+    {
+        return [
+            'current_password' => ['required', 'string', 'current_password'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ];
+    }
+
+    /**
+     * Get the validation error messages.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'current_password.required' => __('api.validation.current_password_required'),
+            'current_password.current_password' => __('api.validation.current_password_incorrect'),
+            'password.required' => __('api.validation.new_password_required'),
+            'password.min' => __('api.validation.password_min'),
+            'password.confirmed' => __('api.validation.password_confirmation_mismatch'),
+        ];
+    }
+}

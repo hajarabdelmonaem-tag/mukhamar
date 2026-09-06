@@ -1,0 +1,107 @@
+<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"secondary-fixed-dim":"#d3c2ca","on-background":"#1e1b1c","inverse-on-surface":"#f6eff0","surface-container-highest":"#e8e1e2","primary-fixed-dim":"#dfbdd2","on-tertiary-container":"#d2ddb9","on-primary-container":"#f1cee4","on-primary-fixed":"#291524","on-surface":"#1e1b1c","tertiary-container":"#586245","outline":"#7f747a","on-tertiary-fixed-variant":"#414a2f","tertiary-fixed":"#dce7c2","on-secondary-container":"#6c5f66","surface-container-high":"#eee6e8","on-error":"#ffffff","on-primary":"#ffffff","primary":"#583f50","secondary-fixed":"#f0dee6","on-secondary":"#ffffff","surface-container":"#f3eced","on-tertiary":"#ffffff","on-primary-fixed-variant":"#583f50","primary-container":"#715668","inverse-surface":"#332f31","surface-dim":"#dfd8da","error-container":"#ffdad6","on-tertiary-fixed":"#161e07","tertiary-fixed-dim":"#c0cba7","inverse-primary":"#dfbdd2","on-secondary-fixed":"#22191f","tertiary":"#414a2f","primary-fixed":"#fcd9ee","surface":"#fff7f9","on-surface-variant":"#4d4449","background":"#fff7f9","secondary-container":"#eddbe3","secondary":"#685b62","outline-variant":"#d0c3c9","surface-bright":"#fff7f9","surface-tint":"#715668","surface-variant":"#e8e1e2","surface-container-lowest":"#ffffff","on-error-container":"#93000a","on-secondary-fixed-variant":"#4f434a","surface-container-low":"#f9f2f3","error":"#ba1a1a"},"borderRadius":{"DEFAULT":"0.5rem","lg":"1rem","xl":"1.5rem","full":"9999px"},"fontFamily":{"headline":["Noto Sans Arabic"],"display":["Noto Sans Arabic"],"body":["Noto Sans Arabic"],"label":["Noto Sans Arabic"]}}}}</script><style>@layer base{html,body{width:100vw;margin:0;padding:0;overflow-x:hidden;font-family:'Noto Sans Arabic',sans-serif;}body{overscroll-behavior:none;}}::-webkit-scrollbar{display:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom);}.pt-safe{padding-top:env(safe-area-inset-top);}</style></head><body class="bg-background text-on-background"><header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-xl"><div class="flex items-center h-16 px-4 justify-between"><button class="w-10 h-10 flex items-center justify-center rounded-full text-on-surface" onclick="history.back()"><span class="material-symbols-outlined text-[24px]">arrow_forward</span></button><h1 class="text-[17px] font-semibold text-on-surface">Verify Otp</h1><div class="w-10"></div></div></header><main class="flex flex-col relative w-full pt-16"><div class="flex flex-col w-full h-full relative overflow-hidden bg-surface pb-safe">
+<!-- Subtle background decoration -->
+<div class="absolute top-0 right-0 w-full h-[300px] bg-gradient-to-b from-primary/5 to-transparent pointer-events-none"></div>
+<div class="absolute -top-32 -right-32 w-64 h-64 bg-primary-fixed-dim/20 rounded-full blur-3xl pointer-events-none"></div>
+<div class="flex-1 flex flex-col items-center justify-center px-6 mt-8 relative z-10">
+<!-- Brand Icon / Avatar -->
+<div class="w-20 h-20 bg-surface-container-high rounded-full flex items-center justify-center mb-8 shadow-sm">
+<span class="material-symbols-outlined text-4xl text-primary" style="font-variation-settings: 'FILL' 1;">
+                mark_email_read
+            </span>
+</div>
+<!-- Typography -->
+<div class="text-center w-full max-w-sm mb-12">
+<h2 class="text-[32px] font-bold text-on-surface mb-3 tracking-tight">رمز التحقق</h2>
+<p class="text-[17px] text-on-surface-variant leading-relaxed px-4">تم إرسال رمز التحقق إلى رقم جوالك<br><span class="font-medium text-primary block mt-1" dir="ltr">+966 5X XXX XXXX</span></p>
+</div>
+<!-- OTP Input Container -->
+<div class="flex items-center justify-center gap-4 mb-10 w-full max-w-sm" dir="ltr">
+<!-- Digit 1 -->
+<input autofocus="" class="w-14 h-16 bg-surface-container text-on-surface text-center text-[28px] font-bold rounded-xl focus:bg-surface-container-highest focus:outline-none focus:ring-2 focus:ring-primary/40 transition-colors shadow-sm" maxlength="1" type="tel">
+<!-- Digit 2 -->
+<input class="w-14 h-16 bg-surface-container text-on-surface text-center text-[28px] font-bold rounded-xl focus:bg-surface-container-highest focus:outline-none focus:ring-2 focus:ring-primary/40 transition-colors shadow-sm" maxlength="1" type="tel">
+<!-- Digit 3 -->
+<input class="w-14 h-16 bg-surface-container text-on-surface text-center text-[28px] font-bold rounded-xl focus:bg-surface-container-highest focus:outline-none focus:ring-2 focus:ring-primary/40 transition-colors shadow-sm" maxlength="1" type="tel">
+<!-- Digit 4 -->
+<input class="w-14 h-16 bg-surface-container text-on-surface text-center text-[28px] font-bold rounded-xl focus:bg-surface-container-highest focus:outline-none focus:ring-2 focus:ring-primary/40 transition-colors shadow-sm" maxlength="1" type="tel">
+</div>
+<!-- Resend Link -->
+<div class="flex items-center justify-center gap-2 mb-auto text-[15px]">
+<span class="text-on-surface-variant">لم يصلك الرمز؟</span>
+<button class="text-primary font-semibold hover:text-primary-container transition-colors active:scale-95 px-2 py-1 rounded-md" style="opacity: 1;">
+                إعادة الإرسال
+            </button>
+<span class="text-outline-variant mr-1" id="timer" style="display: none;">00:01</span>
+</div>
+</div>
+<!-- Bottom Action Button -->
+<div class="w-full px-6 py-6 bg-surface/90 backdrop-blur-md mt-auto rounded-t-3xl shadow-[0_-4px_24px_rgba(0,0,0,0.02)] relative z-20">
+<button class="w-full h-[56px] bg-primary text-on-primary rounded-2xl text-[17px] font-semibold flex items-center justify-center gap-2 shadow-md hover:bg-primary/90 active:scale-[0.98] transition-all" onclick="verifyOTP()">
+            تحقق
+            <span class="material-symbols-outlined text-[20px] ml-1">check_circle</span>
+</button>
+</div>
+<script>
+        // Simple OTP input navigation
+        const inputs = document.querySelectorAll('input[type="tel"]');
+        
+        inputs.forEach((input, index) => {
+            input.addEventListener('input', (e) => {
+                if (e.target.value.length === 1) {
+                    if (index < inputs.length - 1) {
+                        inputs[index + 1].focus();
+                    }
+                }
+            });
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && e.target.value === '') {
+                    if (index > 0) {
+                        inputs[index - 1].focus();
+                        inputs[index - 1].value = '';
+                    }
+                }
+            });
+            
+            // Allow only numbers
+            input.addEventListener('keypress', (e) => {
+                if (!/^[0-9]$/.test(e.key)) {
+                    e.preventDefault();
+                }
+            });
+        });
+
+        // Basic timer logic
+        let timeLeft = 59;
+        const timerElement = document.getElementById('timer');
+        const resendBtn = document.querySelector('button.text-primary');
+        
+        const countdown = setInterval(() => {
+            if (timeLeft <= 0) {
+                clearInterval(countdown);
+                timerElement.style.display = 'none';
+                resendBtn.style.opacity = '1';
+                resendBtn.disabled = false;
+            } else {
+                timerElement.innerText = `00:${timeLeft.toString().padStart(2, '0')}`;
+                timeLeft -= 1;
+            }
+        }, 1000);
+
+        // Simulation function for button click
+        function verifyOTP() {
+            const btn = document.querySelector('.bg-primary');
+            btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[20px]">progress_activity</span> جاري التحقق...';
+            btn.style.opacity = '0.8';
+            
+            setTimeout(() => {
+                btn.innerHTML = 'تم التحقق بنجاح <span class="material-symbols-outlined text-[20px] ml-1">done_all</span>';
+                btn.style.backgroundColor = 'var(--color-tertiary-container, #586245)';
+                btn.style.color = 'var(--color-on-tertiary-container, #d2ddb9)';
+            }, 1500);
+        }
+    </script>
+</div></main>
+
+</body></html>

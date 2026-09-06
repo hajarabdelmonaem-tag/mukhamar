@@ -1,0 +1,2205 @@
+{
+    "info": {
+        "name": "Mukhamar API",
+        "description": "API collection for the Mukhamar marketplace (Arabian perfumes & oud). Run Register or Login first so the apiToken variable is captured, then use the authenticated requests. Switch the app language with the X-Locale header (en | ar).",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "http://127.0.0.1:8000",
+            "type": "string"
+        },
+        {
+            "key": "apiToken",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "locale",
+            "value": "en",
+            "type": "string"
+        }
+    ],
+    "item": [
+        {
+            "name": "01 - Public APIs",
+            "item": [
+                {
+                    "name": "Intros",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-Locale",
+                                "value": "{{locale}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/intros",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{baseUrl}}",
+                                "api",
+                                "v1",
+                                "intros"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "List the active onboarding slides (localized).",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Home Screen",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-Locale",
+                                "value": "{{locale}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/home",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{baseUrl}}",
+                                "api",
+                                "v1",
+                                "home"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Home screen bundle: categories, featured products and best sellers.",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "List Categories",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-Locale",
+                                "value": "{{locale}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/categories?type=perfume",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{baseUrl}}",
+                                "api",
+                                "v1",
+                                "categories"
+                            ],
+                            "query": [
+                                {
+                                    "key": "type",
+                                    "value": "perfume",
+                                    "description": "Optional filter: perfume | dehen | incense | home | gifts",
+                                    "type": "text"
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "List active categories ordered by sort_order.",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Category Products",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-Locale",
+                                "value": "{{locale}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/categories/:categorySlug/products?q=%D8%B9%D9%88%D8%AF&sort=price_asc&per_page=12",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{baseUrl}}",
+                                "api",
+                                "v1",
+                                "categories",
+                                ":categorySlug",
+                                "products"
+                            ],
+                            "query": [
+                                {
+                                    "key": "q",
+                                    "value": "عود",
+                                    "description": "Optional search within the category",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "sort",
+                                    "value": "price_asc",
+                                    "description": "price_asc | price_desc | rating",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "per_page",
+                                    "value": "12",
+                                    "description": "Items per page",
+                                    "type": "text"
+                                }
+                            ],
+                            "variable": [
+                                {
+                                    "key": "categorySlug",
+                                    "value": "women-perfumes",
+                                    "description": "Category slug, e.g. women-perfumes, men-perfumes, oud-oil, incense"
+                                }
+                            ]
+                        },
+                        "description": "Paginated products belonging to a category.",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "List Products",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-Locale",
+                                "value": "{{locale}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/products?category=1&search=%D8%B9%D9%88%D8%AF&min_price=100&max_price=1500&featured=false&sort=newest&per_page=12",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{baseUrl}}",
+                                "api",
+                                "v1",
+                                "products"
+                            ],
+                            "query": [
+                                {
+                                    "key": "category",
+                                    "value": "1",
+                                    "description": "Optional category id",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "search",
+                                    "value": "عود",
+                                    "description": "Optional search term in name/description",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "min_price",
+                                    "value": "100",
+                                    "description": "Optional minimum price",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "max_price",
+                                    "value": "1500",
+                                    "description": "Optional maximum price",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "featured",
+                                    "value": "false",
+                                    "description": "Optional boolean, true to return only featured products",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "sort",
+                                    "value": "newest",
+                                    "description": "price_asc | price_desc | rating | newest",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "per_page",
+                                    "value": "12",
+                                    "description": "Items per page",
+                                    "type": "text"
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "Paginated product listing with filtering, search and sorting.",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Featured Products",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-Locale",
+                                "value": "{{locale}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/products/featured",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{baseUrl}}",
+                                "api",
+                                "v1",
+                                "products",
+                                "featured"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Carousel of featured products (max 10).",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Product Detail",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-Locale",
+                                "value": "{{locale}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/products/:productSlug",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{baseUrl}}",
+                                "api",
+                                "v1",
+                                "products",
+                                ":productSlug"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "productSlug",
+                                    "value": "classic-oud-mukhamar",
+                                    "description": "Product slug, e.g. classic-oud-mukhamar, najd-nights, royal-luxury-incense"
+                                }
+                            ]
+                        },
+                        "description": "Full product details: category, images, variants and approved reviews.",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Contact Us",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json",
+                                "type": "text"
+                            },
+                            {
+                                "key": "X-Locale",
+                                "value": "{{locale}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/contact",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "{{baseUrl}}",
+                                "api",
+                                "v1",
+                                "contact"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Submit a public contact message.",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"سارة أحمد\",\n    \"email\": \"demo.client@example.com\",\n    \"phone\": \"+966 50 555 8866\",\n    \"subject\": \"استفسار عن منتج\",\n    \"message\": \"مرحباً، أود الاستفسار عن توفر عطر العود الكلاسيكي بحجم 100 مل.\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Auth",
+                    "item": [
+                        {
+                            "name": "Register",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Locale",
+                                        "value": "{{locale}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/auth/register",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "{{baseUrl}}",
+                                        "api",
+                                        "v1",
+                                        "auth",
+                                        "register"
+                                    ],
+                                    "query": [],
+                                    "variable": []
+                                },
+                                "description": "Create an account. Stores the returned token in the apiToken collection variable.",
+                                "auth": {
+                                    "type": "noauth"
+                                },
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"name\": \"سارة أحمد\",\n    \"email\": \"demo.client@example.com\",\n    \"phone\": \"+966 50 555 8866\",\n    \"password\": \"secret123\",\n    \"password_confirmation\": \"secret123\",\n    \"accept_terms\": true\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "response": [],
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "pm.test(\"capture access token\", function () {",
+                                            "    const json = pm.response.json();",
+                                            "    if ((pm.response.code === 200 || pm.response.code === 201) && json.token) {",
+                                            "        pm.collectionVariables.set(\"apiToken\", json.token);",
+                                            "    }",
+                                            "});"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Login",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Locale",
+                                        "value": "{{locale}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/auth/login",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "{{baseUrl}}",
+                                        "api",
+                                        "v1",
+                                        "auth",
+                                        "login"
+                                    ],
+                                    "query": [],
+                                    "variable": []
+                                },
+                                "description": "Log in with email or phone. Seed credentials: customer@example.com / password. Stores the token.",
+                                "auth": {
+                                    "type": "noauth"
+                                },
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"identifier\": \"customer@example.com\",\n    \"password\": \"password\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "response": [],
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "pm.test(\"capture access token\", function () {",
+                                            "    const json = pm.response.json();",
+                                            "    if ((pm.response.code === 200 || pm.response.code === 201) && json.token) {",
+                                            "        pm.collectionVariables.set(\"apiToken\", json.token);",
+                                            "    }",
+                                            "});"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Forgot Password",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Locale",
+                                        "value": "{{locale}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/auth/forgot-password",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "{{baseUrl}}",
+                                        "api",
+                                        "v1",
+                                        "auth",
+                                        "forgot-password"
+                                    ],
+                                    "query": [],
+                                    "variable": []
+                                },
+                                "description": "Send an OTP to the phone. The response includes a debug_otp while the SMS provider is pending.",
+                                "auth": {
+                                    "type": "noauth"
+                                },
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"phone\": \"+966 55 321 6547\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Verify OTP",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Locale",
+                                        "value": "{{locale}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/auth/verify-otp",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "{{baseUrl}}",
+                                        "api",
+                                        "v1",
+                                        "auth",
+                                        "verify-otp"
+                                    ],
+                                    "query": [],
+                                    "variable": []
+                                },
+                                "description": "Verify the 4-digit OTP (use the OTP from the forgot-password debug response).",
+                                "auth": {
+                                    "type": "noauth"
+                                },
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"phone\": \"+966 55 321 6547\",\n    \"otp\": \"1234\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Reset Password",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Locale",
+                                        "value": "{{locale}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/auth/reset-password",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "{{baseUrl}}",
+                                        "api",
+                                        "v1",
+                                        "auth",
+                                        "reset-password"
+                                    ],
+                                    "query": [],
+                                    "variable": []
+                                },
+                                "description": "Reset the password using the verified OTP.",
+                                "auth": {
+                                    "type": "noauth"
+                                },
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"phone\": \"+966 55 321 6547\",\n    \"otp\": \"1234\",\n    \"password\": \"newpass123\",\n    \"password_confirmation\": \"newpass123\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "response": []
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "02 - Authenticated APIs",
+            "auth": {
+                "type": "bearer",
+                "bearer": [
+                    {
+                        "key": "token",
+                        "value": "{{apiToken}}",
+                        "type": "string"
+                    }
+                ]
+            },
+            "item": [
+                {
+                    "name": "Auth",
+                    "item": [
+                        {
+                            "name": "Logout",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Locale",
+                                        "value": "{{locale}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/auth/logout",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "{{baseUrl}}",
+                                        "api",
+                                        "v1",
+                                        "auth",
+                                        "logout"
+                                    ],
+                                    "query": [],
+                                    "variable": []
+                                },
+                                "description": "Revoke the current token and clear apiToken. This request needs a valid bearer token.",
+                                "auth": {
+                                    "type": "noauth"
+                                }
+                            },
+                            "response": [],
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "pm.test(\"clear access token\", function () {",
+                                            "    if (pm.response.code === 200) {",
+                                            "        pm.collectionVariables.set(\"apiToken\", \"\");",
+                                            "    }",
+                                            "});"
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "Profile",
+                    "item": [
+                        {
+                            "name": "Show Profile",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Locale",
+                                        "value": "{{locale}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/profile",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "{{baseUrl}}",
+                                        "api",
+                                        "v1",
+                                        "profile"
+                                    ],
+                                    "query": [],
+                                    "variable": []
+                                },
+                                "description": "Authenticated profile with stats and saved addresses.",
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{apiToken}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update Profile",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Locale",
+                                        "value": "{{locale}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/profile",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "{{baseUrl}}",
+                                        "api",
+                                        "v1",
+                                        "profile"
+                                    ],
+                                    "query": [],
+                                    "variable": []
+                                },
+                                "description": "Update name/email/phone and optionally upload an avatar file.",
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{apiToken}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "body": {
+                                    "mode": "formdata",
+                                    "formdata": [
+                                        {
+                                            "key": "name",
+                                            "value": "سارة أحمد",
+                                            "type": "text"
+                                        },
+                                        {
+                                            "key": "email",
+                                            "value": "demo.client@example.com",
+                                            "type": "text"
+                                        },
+                                        {
+                                            "key": "phone",
+                                            "value": "+966 50 555 8866",
+                                            "type": "text"
+                                        },
+                                        {
+                                            "key": "avatar",
+                                            "type": "file",
+                                            "src": [
+                                                "C:\\Users\\you\\avatar.png"
+                                            ],
+                                            "value": "",
+                                            "description": "jpg/jpeg/png/webp, max 2 MB (optional)"
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Change Password",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Locale",
+                                        "value": "{{locale}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/profile/password",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "{{baseUrl}}",
+                                        "api",
+                                        "v1",
+                                        "profile",
+                                        "password"
+                                    ],
+                                    "query": [],
+                                    "variable": []
+                                },
+                                "description": "Change the password (current_password must match).",
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{apiToken}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"current_password\": \"password\",\n    \"password\": \"secret123\",\n    \"password_confirmation\": \"secret123\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Delete Account",
+                            "request": {
+                                "method": "DELETE",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Locale",
+                                        "value": "{{locale}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/profile",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "{{baseUrl}}",
+                                        "api",
+                                        "v1",
+                                        "profile"
+                                    ],
+                                    "query": [],
+                                    "variable": []
+                                },
+                                "description": "Permanently delete the account and revoke all tokens.",
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{apiToken}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
+                    "name": "Payment Methods",
+                    "item": [
+                        {
+                            "name": "List Payment Methods",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Locale",
+                                        "value": "{{locale}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/payment-methods",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "{{baseUrl}}",
+                                        "api",
+                                        "v1",
+                                        "payment-methods"
+                                    ],
+                                    "query": [],
+                                    "variable": []
+                                },
+                                "description": "The payment methods supported by the app, read from the DB catalog (VISA, MADA, Apple Pay, card).",
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{apiToken}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
+                    "name": "Reviews",
+                    "item": [
+                        {
+                            "name": "Create Review",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Locale",
+                                        "value": "{{locale}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/products/:productSlug/reviews",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "{{baseUrl}}",
+                                        "api",
+                                        "v1",
+                                        "products",
+                                        ":productSlug",
+                                        "reviews"
+                                    ],
+                                    "query": [],
+                                    "variable": [
+                                        {
+                                            "key": "productSlug",
+                                            "value": "classic-oud-mukhamar",
+                                            "description": "Product slug to review"
+                                        }
+                                    ]
+                                },
+                                "description": "Submit a review. One review per user per product (updateOrCreate). Awaits admin approval.",
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{apiToken}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"rating\": 5,\n    \"title\": \"رائحة فاخرة\",\n    \"body\": \"العطر ثابت ورائحته فاخرة، والتغليف ممتاز والسرعة في التوصيل.\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
+                    "name": "Wishlist",
+                    "item": [
+                        {
+                            "name": "List Wishlist",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Locale",
+                                        "value": "{{locale}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/wishlist",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "{{baseUrl}}",
+                                        "api",
+                                        "v1",
+                                        "wishlist"
+                                    ],
+                                    "query": [],
+                                    "variable": []
+                                },
+                                "description": "List the authenticated user wishlist products.",
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{apiToken}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Add to Wishlist",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Locale",
+                                        "value": "{{locale}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/wishlist",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "{{baseUrl}}",
+                                        "api",
+                                        "v1",
+                                        "wishlist"
+                                    ],
+                                    "query": [],
+                                    "variable": []
+                                },
+                                "description": "Add a product to the wishlist.",
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{apiToken}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"product_id\": 1\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Remove from Wishlist",
+                            "request": {
+                                "method": "DELETE",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Locale",
+                                        "value": "{{locale}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/wishlist/:productSlug",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "{{baseUrl}}",
+                                        "api",
+                                        "v1",
+                                        "wishlist",
+                                        ":productSlug"
+                                    ],
+                                    "query": [],
+                                    "variable": [
+                                        {
+                                            "key": "productSlug",
+                                            "value": "classic-oud-mukhamar",
+                                            "description": "Product slug to remove"
+                                        }
+                                    ]
+                                },
+                                "description": "Remove a product from the wishlist.",
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{apiToken}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
+                    "name": "Cart",
+                    "item": [
+                        {
+                            "name": "Show Cart",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Locale",
+                                        "value": "{{locale}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/cart",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "{{baseUrl}}",
+                                        "api",
+                                        "v1",
+                                        "cart"
+                                    ],
+                                    "query": [],
+                                    "variable": []
+                                },
+                                "description": "Cart summary with items, totals and applied coupon.",
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{apiToken}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Add Item",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Locale",
+                                        "value": "{{locale}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/cart/items",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "{{baseUrl}}",
+                                        "api",
+                                        "v1",
+                                        "cart",
+                                        "items"
+                                    ],
+                                    "query": [],
+                                    "variable": []
+                                },
+                                "description": "Add a product (and optional variant) to the cart.",
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{apiToken}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"product_id\": 1,\n    \"product_variant_id\": 1,\n    \"quantity\": 2\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update Item Quantity",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Locale",
+                                        "value": "{{locale}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/cart/items/:item",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "{{baseUrl}}",
+                                        "api",
+                                        "v1",
+                                        "cart",
+                                        "items",
+                                        ":item"
+                                    ],
+                                    "query": [],
+                                    "variable": [
+                                        {
+                                            "key": "item",
+                                            "value": "1",
+                                            "description": "Cart item id"
+                                        }
+                                    ]
+                                },
+                                "description": "Update an existing cart item quantity (1-99).",
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{apiToken}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"quantity\": 3\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Remove Item",
+                            "request": {
+                                "method": "DELETE",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Locale",
+                                        "value": "{{locale}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/cart/items/:item",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "{{baseUrl}}",
+                                        "api",
+                                        "v1",
+                                        "cart",
+                                        "items",
+                                        ":item"
+                                    ],
+                                    "query": [],
+                                    "variable": [
+                                        {
+                                            "key": "item",
+                                            "value": "1",
+                                            "description": "Cart item id"
+                                        }
+                                    ]
+                                },
+                                "description": "Remove an item from the cart.",
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{apiToken}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Apply Coupon",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Locale",
+                                        "value": "{{locale}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/cart/coupon",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "{{baseUrl}}",
+                                        "api",
+                                        "v1",
+                                        "cart",
+                                        "coupon"
+                                    ],
+                                    "query": [],
+                                    "variable": []
+                                },
+                                "description": "Apply a coupon. Seed codes: WELCOME15, WINTER30, SAVE50.",
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{apiToken}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"code\": \"WELCOME15\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Remove Coupon",
+                            "request": {
+                                "method": "DELETE",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Locale",
+                                        "value": "{{locale}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/cart/coupon",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "{{baseUrl}}",
+                                        "api",
+                                        "v1",
+                                        "cart",
+                                        "coupon"
+                                    ],
+                                    "query": [],
+                                    "variable": []
+                                },
+                                "description": "Remove the applied coupon.",
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{apiToken}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
+                    "name": "Addresses",
+                    "item": [
+                        {
+                            "name": "List Addresses",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Locale",
+                                        "value": "{{locale}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/addresses",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "{{baseUrl}}",
+                                        "api",
+                                        "v1",
+                                        "addresses"
+                                    ],
+                                    "query": [],
+                                    "variable": []
+                                },
+                                "description": "The authenticated user address book.",
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{apiToken}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Create Address",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Locale",
+                                        "value": "{{locale}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/addresses",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "{{baseUrl}}",
+                                        "api",
+                                        "v1",
+                                        "addresses"
+                                    ],
+                                    "query": [],
+                                    "variable": []
+                                },
+                                "description": "Add a new address. label: home | work | other.",
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{apiToken}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"label\": \"home\",\n    \"recipient_name\": \"محمد أحمد\",\n    \"street\": \"شارع التحلية\",\n    \"district\": \"حي العليا\",\n    \"city\": \"الرياض\",\n    \"building\": \"مبنى 45\",\n    \"postal_code\": \"12211\",\n    \"phone\": \"+966 55 321 6547\",\n    \"is_default\": true\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update Address",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Locale",
+                                        "value": "{{locale}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/addresses/:address",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "{{baseUrl}}",
+                                        "api",
+                                        "v1",
+                                        "addresses",
+                                        ":address"
+                                    ],
+                                    "query": [],
+                                    "variable": [
+                                        {
+                                            "key": "address",
+                                            "value": "1",
+                                            "description": "Address id"
+                                        }
+                                    ]
+                                },
+                                "description": "Update address fields.",
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{apiToken}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"street\": \"طريق الملك فهد\",\n    \"building\": \"برج المملكة\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Delete Address",
+                            "request": {
+                                "method": "DELETE",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Locale",
+                                        "value": "{{locale}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/addresses/:address",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "{{baseUrl}}",
+                                        "api",
+                                        "v1",
+                                        "addresses",
+                                        ":address"
+                                    ],
+                                    "query": [],
+                                    "variable": [
+                                        {
+                                            "key": "address",
+                                            "value": "1",
+                                            "description": "Address id"
+                                        }
+                                    ]
+                                },
+                                "description": "Delete an address.",
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{apiToken}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Set Default Address",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Locale",
+                                        "value": "{{locale}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/addresses/:address/default",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "{{baseUrl}}",
+                                        "api",
+                                        "v1",
+                                        "addresses",
+                                        ":address",
+                                        "default"
+                                    ],
+                                    "query": [],
+                                    "variable": [
+                                        {
+                                            "key": "address",
+                                            "value": "1",
+                                            "description": "Address id"
+                                        }
+                                    ]
+                                },
+                                "description": "Mark an address as the default delivery address.",
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{apiToken}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
+                    "name": "Orders",
+                    "item": [
+                        {
+                            "name": "List Orders",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Locale",
+                                        "value": "{{locale}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/orders?status=pending&per_page=15",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "{{baseUrl}}",
+                                        "api",
+                                        "v1",
+                                        "orders"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "status",
+                                            "value": "pending",
+                                            "description": "Optional status filter: pending | confirmed | processing | in_transit | delivered | cancelled",
+                                            "type": "text"
+                                        },
+                                        {
+                                            "key": "per_page",
+                                            "value": "15",
+                                            "description": "Items per page",
+                                            "type": "text"
+                                        }
+                                    ],
+                                    "variable": []
+                                },
+                                "description": "Paginated list of the user orders.",
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{apiToken}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Create Order",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Locale",
+                                        "value": "{{locale}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/orders",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "{{baseUrl}}",
+                                        "api",
+                                        "v1",
+                                        "orders"
+                                    ],
+                                    "query": [],
+                                    "variable": []
+                                },
+                                "description": "Place an order from the cart. payment_method: VISA | MADA | Apple Pay | card (must be in the supported catalog).",
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{apiToken}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"address_id\": 1,\n    \"payment_method\": \"VISA\",\n    \"coupon_code\": \"WELCOME15\",\n    \"notes\": \"الرجاء الاتصال قبل التوصيل\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Show Order",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Locale",
+                                        "value": "{{locale}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/orders/:order",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "{{baseUrl}}",
+                                        "api",
+                                        "v1",
+                                        "orders",
+                                        ":order"
+                                    ],
+                                    "query": [],
+                                    "variable": [
+                                        {
+                                            "key": "order",
+                                            "value": "1",
+                                            "description": "Order id"
+                                        }
+                                    ]
+                                },
+                                "description": "Order detail with items, totals and timeline.",
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{apiToken}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Order Invoice",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Locale",
+                                        "value": "{{locale}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/orders/:order/invoice",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "{{baseUrl}}",
+                                        "api",
+                                        "v1",
+                                        "orders",
+                                        ":order",
+                                        "invoice"
+                                    ],
+                                    "query": [],
+                                    "variable": [
+                                        {
+                                            "key": "order",
+                                            "value": "1",
+                                            "description": "Order id"
+                                        }
+                                    ]
+                                },
+                                "description": "Invoice-style summary of the order.",
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{apiToken}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
+                    "name": "Notifications",
+                    "item": [
+                        {
+                            "name": "List Notifications",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Locale",
+                                        "value": "{{locale}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/notifications?per_page=15",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "{{baseUrl}}",
+                                        "api",
+                                        "v1",
+                                        "notifications"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "per_page",
+                                            "value": "15",
+                                            "description": "Items per page",
+                                            "type": "text"
+                                        }
+                                    ],
+                                    "variable": []
+                                },
+                                "description": "Paginated notifications plus unread_count.",
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{apiToken}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Mark Notification Read",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Locale",
+                                        "value": "{{locale}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/notifications/:notification/read",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "{{baseUrl}}",
+                                        "api",
+                                        "v1",
+                                        "notifications",
+                                        ":notification",
+                                        "read"
+                                    ],
+                                    "query": [],
+                                    "variable": [
+                                        {
+                                            "key": "notification",
+                                            "value": "1",
+                                            "description": "Notification id"
+                                        }
+                                    ]
+                                },
+                                "description": "Mark a single notification as read.",
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{apiToken}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Mark All Notifications Read",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Locale",
+                                        "value": "{{locale}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/notifications/read-all",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "{{baseUrl}}",
+                                        "api",
+                                        "v1",
+                                        "notifications",
+                                        "read-all"
+                                    ],
+                                    "query": [],
+                                    "variable": []
+                                },
+                                "description": "Mark every unread notification as read.",
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{apiToken}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": []
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
