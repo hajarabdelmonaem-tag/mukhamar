@@ -26,8 +26,10 @@ class HomeController extends Controller
             ],
             'categories' => Category::query()
                 ->withCount('products')
+                ->where('parent_id', null)
                 ->where('is_active', true)
                 ->orderBy('sort_order')
+                ->limit(5)
                 ->get(),
             'featured' => Product::query()
                 ->with(['category', 'images', 'variants'])

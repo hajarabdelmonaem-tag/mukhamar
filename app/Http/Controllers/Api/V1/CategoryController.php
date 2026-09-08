@@ -19,6 +19,7 @@ class CategoryController extends Controller
         $categories = Category::query()
             ->withCount('products')
             ->where('is_active', true)
+            ->when($request->filled('parent_id'), fn ($query, $value) => $query->where('parent_id', $value), fn ($query) => $query->whereNull('parent_id'))
             ->when($request->type, fn ($query, $type) => $query->where('type', $type))
             ->orderBy('sort_order')
             ->get();

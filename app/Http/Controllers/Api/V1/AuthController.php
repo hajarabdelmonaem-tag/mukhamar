@@ -42,11 +42,10 @@ class AuthController extends Controller
      */
     public function login(LoginRequest $request): JsonResponse
     {
-        $identifier = $request->identifier;
+        $identifier = $request->phone;
 
         $user = User::query()
-            ->where('email', $identifier)
-            ->orWhere('phone', $identifier)
+            ->where('phone', $identifier)
             ->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
@@ -61,10 +60,12 @@ class AuthController extends Controller
             ]);
         }
 
+        $user->update(['phone_verified_at' => now()]);
+
         $token = $user->createToken('mobile')->plainTextToken;
 
         return response()->json([
-            'message' => __('api.auth.logged_in'),
+            'message' => __('api.auth.otp_verified'),
             'token' => $token,
             'user' => new UserResource($user),
         ]);
@@ -116,20 +117,21 @@ class AuthController extends Controller
      */
     public function verifyOtp(VerifyOtpRequest $request): JsonResponse
     {
-        $record = \DB::table('password_reset_tokens')
-            ->where('email', $request->phone)
-            ->first();
+        $user = User::where('phone', $request->phone)->first();
 
-        if (! $record || ! Hash::check($request->otp, $record->token)) {
+        if (! $user || $user->phone_confirmation_code !== $request->otp) {
             throw ValidationException::withMessages([
                 'otp' => [__('api.auth.otp_invalid')],
             ]);
         }
+        $user->update(['phone_verified_at' => now()]);
 
+        $token = $user->createToken('mobile')->plainTextToken;
 
         return response()->json([
             'message' => __('api.auth.otp_verified'),
-            'reset_token' => $record->token,
+            'token' => $token,
+            'user' => new UserResource($user->refresh()),
         ]);
     }
 

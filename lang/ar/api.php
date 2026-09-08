@@ -47,6 +47,11 @@ return [
         ],
     ],
 
+    'order_enquiry' => [
+        'address_invalid' => 'عنوان التوصيل غير صالح.',
+        'cart_empty' => 'سلة التسوق فارغة.',
+    ],
+
     'cart' => [
         'item_added' => 'تمت إضافة المنتج إلى السلة.',
         'quantity_updated' => 'تم تحديث الكمية.',

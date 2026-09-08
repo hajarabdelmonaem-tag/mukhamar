@@ -47,6 +47,11 @@ return [
         ],
     ],
 
+    'order_enquiry' => [
+        'address_invalid' => 'Invalid delivery address.',
+        'cart_empty' => 'Your shopping cart is empty.',
+    ],
+
     'cart' => [
         'item_added' => 'Product added to cart.',
         'quantity_updated' => 'Quantity updated.',

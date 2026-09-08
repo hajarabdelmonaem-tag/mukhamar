@@ -9,22 +9,29 @@ use App\Http\Controllers\Api\V1\HomeController;
 use App\Http\Controllers\Api\V1\IntroController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\OrderController;
+use App\Http\Controllers\Api\V1\OrderEnquiryController;
+use App\Http\Controllers\Api\V1\PageController;
 use App\Http\Controllers\Api\V1\PaymentMethodController;
 use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\ProfileController;
+use App\Http\Controllers\Api\V1\SocialController;
 use App\Http\Controllers\Api\V1\WishlistController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
     // Public
     Route::get('intros', [IntroController::class, 'index']);
+    Route::get('socials', [SocialController::class, 'index']);
     Route::get('home', [HomeController::class, 'index']);
     Route::get('categories', [CategoryController::class, 'index']);
-    Route::get('categories/{category:slug}/products', [CategoryController::class, 'products']);
+    // Terms & Policy (static pages)
+    Route::get('terms', [PageController::class, 'terms']);
+    Route::get('policy', [PageController::class, 'policy']);
+    // Payment methods (supported methods only)
+    Route::get('payment-methods', [PaymentMethodController::class, 'index']);
 
     Route::get('products', [ProductController::class, 'index']);
-    Route::get('products/featured', [ProductController::class, 'featured']);
-    Route::get('products/{product:slug}', [ProductController::class, 'show']);
+    Route::get('products/{product}', [ProductController::class, 'show']);
 
     // Auth
     Route::post('auth/register', [AuthController::class, 'register']);
@@ -47,13 +54,17 @@ Route::prefix('v1')->group(function (): void {
         Route::put('profile/password', [ProfileController::class, 'updatePassword']);
         Route::delete('profile', [ProfileController::class, 'destroy']);
 
-        // Categories & Products
-        Route::post('products/{product:slug}/reviews', [ProductController::class, 'storeReview']);
-
         // Wishlist
         Route::get('wishlist', [WishlistController::class, 'index']);
         Route::post('wishlist', [WishlistController::class, 'store']);
-        Route::delete('wishlist/{product:slug}', [WishlistController::class, 'destroy']);
+        Route::delete('wishlist/{product}', [WishlistController::class, 'destroy']);
+
+        // Addresses
+        Route::get('addresses', [AddressController::class, 'index']);
+        Route::post('addresses', [AddressController::class, 'store']);
+        Route::put('addresses/{address}', [AddressController::class, 'update']);
+        Route::delete('addresses/{address}', [AddressController::class, 'destroy']);
+        Route::post('addresses/{address}/default', [AddressController::class, 'makeDefault']);
 
         // Cart
         Route::get('cart', [CartController::class, 'show']);
@@ -63,12 +74,8 @@ Route::prefix('v1')->group(function (): void {
         Route::post('cart/coupon', [CartController::class, 'applyCoupon']);
         Route::delete('cart/coupon', [CartController::class, 'removeCoupon']);
 
-        // Addresses
-        Route::get('addresses', [AddressController::class, 'index']);
-        Route::post('addresses', [AddressController::class, 'store']);
-        Route::put('addresses/{address}', [AddressController::class, 'update']);
-        Route::delete('addresses/{address}', [AddressController::class, 'destroy']);
-        Route::post('addresses/{address}/default', [AddressController::class, 'makeDefault']);
+        // Order enquiry (shipping & financial breakdown)
+        Route::post('order-enquiry', OrderEnquiryController::class);
 
         // Orders
         Route::get('orders', [OrderController::class, 'index']);
@@ -76,12 +83,7 @@ Route::prefix('v1')->group(function (): void {
         Route::get('orders/{order}', [OrderController::class, 'show']);
         Route::get('orders/{order}/invoice', [OrderController::class, 'invoice']);
 
-        // Payment methods (supported methods only)
-        Route::get('payment-methods', [PaymentMethodController::class, 'index']);
-
         // Notifications
         Route::get('notifications', [NotificationController::class, 'index']);
-        Route::post('notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
-        Route::post('notifications/read-all', [NotificationController::class, 'markAllAsRead']);
     });
 });

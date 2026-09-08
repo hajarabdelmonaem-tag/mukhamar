@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             OrderSeeder::class,
             MarketplaceSeeder::class,
             PaymentMethodSeeder::class,
+            SettingSeeder::class,
         ]);
     }
 }
