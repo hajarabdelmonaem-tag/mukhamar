@@ -11,18 +11,27 @@ class SettingSeeder extends Seeder
     use WithoutModelEvents;
 
     /**
-     * Seed the application settings with social links, terms and policy.
+     * Seed the application settings with the default values.
      */
     public function run(): void
     {
         $settings = [
+            'site_name' => 'Mukhamar',
+            'site_email' => 'info@mukhamar.com',
+            'site_phone' => '+966 50 000 0000',
+            'site_logo' => '',
+            'currency' => 'SAR',
+            'tax_rate' => 15,
+            'shipping_fee' => 30,
+            'free_shipping_threshold' => 300,
+            'maintenance_mode' => 'false',
             'socials' => [
                 ['name' => ['en' => 'Facebook', 'ar' => 'فيسبوك'], 'icon' => 'socials/facebook.png', 'link' => 'https://facebook.com/mukhamar'],
                 ['name' => ['en' => 'Instagram', 'ar' => 'انستغرام'], 'icon' => 'socials/instagram.png', 'link' => 'https://instagram.com/mukhamar'],
                 ['name' => ['en' => 'TikTok', 'ar' => 'تيك توك'], 'icon' => 'socials/tiktok.png', 'link' => 'https://tiktok.com/@mukhamar'],
                 ['name' => ['en' => 'X', 'ar' => 'إكس'], 'icon' => 'socials/x.png', 'link' => 'https://x.com/mukhamar'],
             ],
-            'terms' => [
+            'terms_conditions' => [
                 'title' => ['en' => 'Terms & Conditions', 'ar' => 'الشروط والأحكام'],
                 'sections' => [
                     [
@@ -41,7 +50,7 @@ class SettingSeeder extends Seeder
                     ],
                 ],
             ],
-            'policy' => [
+            'privacy_policy' => [
                 'title' => ['en' => 'Privacy Policy', 'ar' => 'سياسة الخصوصية'],
                 'sections' => [
                     [

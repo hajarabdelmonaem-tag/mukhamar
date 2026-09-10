@@ -8,12 +8,20 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\Translatable\HasTranslations;
 
 #[Fillable(['product_id', 'name', 'unit', 'price_adjustment', 'sku', 'stock', 'is_default', 'is_active'])]
 class ProductVariant extends Model
 {
     /** @use HasFactory<ProductVariantFactory> */
-    use HasFactory;
+    use HasFactory, HasTranslations;
+
+    /**
+     * The translatable attributes.
+     *
+     * @var array<int, string>
+     */
+    public array $translatable = ['name', 'unit'];
 
     /**
      * The attributes that should be cast.

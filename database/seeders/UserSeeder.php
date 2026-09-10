@@ -23,6 +23,7 @@ class UserSeeder extends Seeder
                 'avatar' => null,
                 'lang' => 'ar',
                 'is_active' => true,
+                'is_admin' => true,
             ]
         );
         $admin->markEmailAsVerified();

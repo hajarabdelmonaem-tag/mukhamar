@@ -15,7 +15,7 @@ class ProductSeeder extends Seeder
     {
         $products = [
             [
-                'name' => 'مخمر عود كلاسيك',
+                'name' => ['en' => 'Classic Oud Mukhamar', 'ar' => 'مخمر عود كلاسيك'],
                 'slug' => 'classic-oud-mukhamar',
                 'category' => 'oud-oil',
                 'price' => 249,
@@ -33,7 +33,7 @@ class ProductSeeder extends Seeder
                 ],
             ],
             [
-                'name' => 'ليالي نجد',
+                'name' => ['en' => 'Najd Nights', 'ar' => 'ليالي نجد'],
                 'slug' => 'najd-nights',
                 'category' => 'women-perfumes',
                 'price' => 320,
@@ -51,7 +51,7 @@ class ProductSeeder extends Seeder
                 ],
             ],
             [
-                'name' => 'بخور ملكي فاخر',
+                'name' => ['en' => 'Royal Luxury Incense', 'ar' => 'بخور ملكي فاخر'],
                 'slug' => 'royal-luxury-incense',
                 'category' => 'incense',
                 'price' => 185,
@@ -68,7 +68,7 @@ class ProductSeeder extends Seeder
                 ],
             ],
             [
-                'name' => 'عود ملكي',
+                'name' => ['en' => 'Royal Oud', 'ar' => 'عود ملكي'],
                 'slug' => 'royal-oud',
                 'category' => 'men-perfumes',
                 'price' => 550,
@@ -86,7 +86,7 @@ class ProductSeeder extends Seeder
                 ],
             ],
             [
-                'name' => 'همس الحرير',
+                'name' => ['en' => 'Silk Whisper', 'ar' => 'همس الحرير'],
                 'slug' => 'silk-whisper',
                 'category' => 'women-perfumes',
                 'price' => 420,
@@ -104,7 +104,7 @@ class ProductSeeder extends Seeder
                 ],
             ],
             [
-                'name' => 'ليل الصحراء',
+                'name' => ['en' => 'Desert Night', 'ar' => 'ليل الصحراء'],
                 'slug' => 'desert-night',
                 'category' => 'men-perfumes',
                 'price' => 450,
@@ -122,7 +122,7 @@ class ProductSeeder extends Seeder
                 ],
             ],
             [
-                'name' => 'دهن عود كمبودي معتق',
+                'name' => ['en' => 'Aged Cambodian Oud', 'ar' => 'دهن عود كمبودي معتق'],
                 'slug' => 'aged-cambodian-oud',
                 'category' => 'oud-oil',
                 'price' => 1200,
@@ -140,7 +140,7 @@ class ProductSeeder extends Seeder
                 ],
             ],
             [
-                'name' => 'بخور سكون',
+                'name' => ['en' => 'Sukoon Incense', 'ar' => 'بخور سكون'],
                 'slug' => 'sukoon-incense',
                 'category' => 'incense',
                 'price' => 129,
@@ -157,7 +157,7 @@ class ProductSeeder extends Seeder
                 ],
             ],
             [
-                'name' => 'معمول دوسري فاخر',
+                'name' => ['en' => 'Luxury Dosari Mamool', 'ar' => 'معمول دوسري فاخر'],
                 'slug' => 'luxury-dosari-mamool',
                 'category' => 'incense',
                 'price' => 220,
@@ -174,7 +174,7 @@ class ProductSeeder extends Seeder
                 ],
             ],
             [
-                'name' => 'بخور المجلس',
+                'name' => ['en' => 'Majlis Incense', 'ar' => 'بخور المجلس'],
                 'slug' => 'majlis-incense',
                 'category' => 'incense',
                 'price' => 280,
@@ -191,7 +191,7 @@ class ProductSeeder extends Seeder
                 ],
             ],
             [
-                'name' => 'موزع عطر عنبر',
+                'name' => ['en' => 'Amber Diffuser', 'ar' => 'موزع عطر عنبر'],
                 'slug' => 'amber-diffuser',
                 'category' => 'home-fragrances',
                 'price' => 390,
@@ -208,7 +208,7 @@ class ProductSeeder extends Seeder
                 ],
             ],
             [
-                'name' => 'دهن الورد الدمشقي',
+                'name' => ['en' => 'Damask Rose Dehen', 'ar' => 'دهن الورد الدمشقي'],
                 'slug' => 'damask-rose-dehen',
                 'category' => 'oud-oil',
                 'price' => 450,
@@ -226,7 +226,7 @@ class ProductSeeder extends Seeder
                 ],
             ],
             [
-                'name' => 'مسك الحرير',
+                'name' => ['en' => 'Silk Musk', 'ar' => 'مسك الحرير'],
                 'slug' => 'silk-musk',
                 'category' => 'women-perfumes',
                 'price' => 380,
@@ -244,7 +244,7 @@ class ProductSeeder extends Seeder
                 ],
             ],
             [
-                'name' => 'العود الفاخر',
+                'name' => ['en' => 'Luxury Oud', 'ar' => 'العود الفاخر'],
                 'slug' => 'luxury-oud',
                 'category' => 'men-perfumes',
                 'price' => 650,
@@ -269,15 +269,29 @@ class ProductSeeder extends Seeder
             unset($data['category'], $data['variants']);
 
             $data['category_id'] = $category->id;
+            $data['top_notes'] = self::notes($data['top_notes'] ?? null);
+            $data['heart_notes'] = self::notes($data['heart_notes'] ?? null);
+            $data['base_notes'] = self::notes($data['base_notes'] ?? null);
 
             /** @var Product $product */
             $product = Product::query()->updateOrCreate(['slug' => $data['slug']], $data);
 
             foreach ($variants as $variant) {
-                $product->variants()->updateOrCreate(
-                    ['name' => $variant['name']],
-                    [...$variant, 'sku' => strtoupper(str_replace('-', '', $data['slug'])).mt_rand(100, 999)]
-                );
+                $variantData = [
+                    'name' => self::variantName($variant['name']),
+                    'unit' => isset($variant['unit']) ? self::variantUnit($variant['unit']) : null,
+                    'price_adjustment' => $variant['price_adjustment'],
+                    'is_default' => $variant['is_default'],
+                    'sku' => strtoupper(str_replace('-', '', $data['slug'])).mt_rand(100, 999),
+                ];
+
+                $existing = $product->variants()->where('name->en', $variant['name'])->first();
+
+                if ($existing) {
+                    $existing->update($variantData);
+                } else {
+                    $product->variants()->create($variantData);
+                }
             }
 
             $product->images()->create([
@@ -287,5 +301,82 @@ class ProductSeeder extends Seeder
                 'sort_order' => 0,
             ]);
         }
+    }
+
+    /**
+     * Bilingual translation for a fragrance note string.
+     */
+    private static function notes(?string $value): ?array
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $map = [
+            'زعفران' => 'Saffron',
+            'ورد طائفي' => 'Taif Rose',
+            'عود' => 'Oud',
+            'مسك' => 'Musk',
+            'باتشولي' => 'Patchouli',
+            'عنبر' => 'Amber',
+            'عود كمبودي' => 'Cambodian Oud',
+            'بنزوين' => 'Benzoin',
+            'عود مروكي' => 'Moroccan Oud',
+            'فريزيا' => 'Freesia',
+            'ياسمين' => 'Jasmine',
+            'مسك ناعم' => 'Soft Musk',
+            'هيل' => 'Cardamom',
+            'خشب الصندل' => 'Sandalwood',
+            'ورد' => 'Rose',
+            'رمان' => 'Pomegranate',
+            'خطمي' => 'Mallow',
+            'برغموت' => 'Bergamot',
+            'فانيليا' => 'Vanilla',
+            'ورد دمشقي' => 'Damask Rose',
+            'صندل' => 'Sandalwood',
+            'يلنغ' => 'Ylang Ylang',
+            'مسك أبيض' => 'White Musk',
+        ];
+
+        $english = collect(explode('،', $value))
+            ->map(fn (string $note) => $map[trim($note)] ?? trim($note))
+            ->implode(', ');
+
+        return ['en' => $english, 'ar' => $value];
+    }
+
+    /**
+     * Bilingual translation for a variant name.
+     *
+     * @return array{en: string, ar: string}
+     */
+    private static function variantName(string $name): array
+    {
+        return match ($name) {
+            '50ml' => ['en' => '50ml', 'ar' => '50 مل'],
+            '100ml' => ['en' => '100ml', 'ar' => '100 مل'],
+            '200ml' => ['en' => '200ml', 'ar' => '200 مل'],
+            '12g' => ['en' => '12g', 'ar' => '12 جرام'],
+            '8g' => ['en' => '8g', 'ar' => '8 جرام'],
+            '16g' => ['en' => '16g', 'ar' => '16 جرام'],
+            'ربع تولة' => ['en' => 'Quarter Tola', 'ar' => 'ربع تولة'],
+            'تولة كاملة' => ['en' => 'Full Tola', 'ar' => 'تولة كاملة'],
+            default => ['en' => $name, 'ar' => $name],
+        };
+    }
+
+    /**
+     * Bilingual translation for a variant unit.
+     *
+     * @return array{en: string, ar: string}
+     */
+    private static function variantUnit(string $unit): array
+    {
+        return match ($unit) {
+            'مل' => ['en' => 'ml', 'ar' => 'مل'],
+            'جرام' => ['en' => 'g', 'ar' => 'جرام'],
+            'تولة' => ['en' => 'tola', 'ar' => 'تولة'],
+            default => ['en' => $unit, 'ar' => $unit],
+        };
     }
 }

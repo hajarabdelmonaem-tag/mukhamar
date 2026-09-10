@@ -9,6 +9,7 @@ use App\Models\Address;
 use App\Models\Cart;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Services\PricingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +17,8 @@ use Illuminate\Validation\ValidationException;
 
 class OrderController extends Controller
 {
+    public function __construct(private PricingService $pricing) {}
+
     /**
      * List the authenticated user's orders.
      */
@@ -71,18 +74,11 @@ class OrderController extends Controller
         $order = DB::transaction(function () use ($request, $user, $cart, $address) {
             $subtotal = $cart->items->sum(fn ($item) => $item->lineTotal());
 
-            $discount = 0.0;
-            if ($cart->coupon && $cart->coupon->isValid($subtotal)) {
-                $discount = $cart->coupon->discount_type === 'percentage'
-                    ? round($subtotal * ($cart->coupon->discount_value / 100), 2)
-                    : min((float) $cart->coupon->discount_value, $subtotal);
+            $summary = $this->pricing->summary($subtotal, $cart->coupon);
 
+            if ($cart->coupon && $cart->coupon->isValid($subtotal)) {
                 $cart->coupon->increment('used_count');
             }
-
-            $shipping = $subtotal >= 300 ? 0 : 30;
-            $tax = round(($subtotal - $discount) * 0.15, 2);
-            $total = round($subtotal - $discount + $shipping + $tax, 2);
 
             $order = Order::query()->create([
                 'order_no' => 'MKR-'.mt_rand(1000, 9999),
@@ -92,11 +88,11 @@ class OrderController extends Controller
                 'status' => Order::STATUS_PENDING,
                 'payment_method' => $request->payment_method,
                 'payment_status' => 'pending',
-                'subtotal' => $subtotal,
-                'shipping' => $shipping,
-                'discount' => $discount,
-                'tax' => $tax,
-                'total' => $total,
+                'subtotal' => $summary['subtotal'],
+                'shipping' => $summary['shipping'],
+                'discount' => $summary['discount'],
+                'tax' => $summary['tax'],
+                'total' => $summary['total'],
                 'notes' => $request->notes,
                 'placed_at' => now(),
             ]);

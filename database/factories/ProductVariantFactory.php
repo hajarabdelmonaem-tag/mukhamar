@@ -20,8 +20,8 @@ class ProductVariantFactory extends Factory
     {
         return [
             'product_id' => Product::factory(),
-            'name' => fake()->randomElement(['50ml', '100ml', '200ml', 'تولة كاملة', 'ربع تولة', '12g']),
-            'unit' => fake()->randomElement(['مل', 'جرام', 'تولة']),
+            'name' => ['en' => fake()->randomElement(['50ml', '100ml', '200ml', 'Full Tola', 'Quarter Tola', '12g']), 'ar' => fake()->randomElement(['50مل', '100مل', '200مل', 'تولة كاملة', 'ربع تولة', '12جرام'])],
+            'unit' => ['en' => fake()->randomElement(['ml', 'g', 'tola']), 'ar' => fake()->randomElement(['مل', 'جرام', 'تولة'])],
             'price_adjustment' => fake()->randomElement([0, 50, 150, 300]),
             'sku' => fake()->unique()->bothify('SKU-####-????'),
             'stock' => fake()->numberBetween(0, 200),

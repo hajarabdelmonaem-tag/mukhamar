@@ -8,12 +8,20 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\Translatable\HasTranslations;
 
 #[Fillable(['parent_id', 'name', 'slug', 'description', 'image', 'type', 'is_active', 'sort_order'])]
 class Category extends Model
 {
     /** @use HasFactory<CategoryFactory> */
-    use HasFactory;
+    use HasFactory, HasTranslations;
+
+    /**
+     * The translatable attributes.
+     *
+     * @var array<int, string>
+     */
+    public array $translatable = ['name', 'description'];
 
     /**
      * The products belonging to this category.

@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\V1;
 
+use App\Services\SettingsService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -24,6 +25,7 @@ class ProductResource extends JsonResource
             'usage_instructions' => $this->usage_instructions,
             'price' => (float) $this->price,
             'old_price' => $this->old_price !== null ? (float) $this->old_price : null,
+            'currency' => app(SettingsService::class)->currency()?? 'SAR',
             'has_discount' => $this->old_price !== null,
             'discount_percentage' => $this->discountPercentage(),
             'rating' => (float) $this->rating,
@@ -46,7 +48,7 @@ class ProductResource extends JsonResource
                 return $primary ? new ProductImageResource($primary) : null;
             }),
             'variants' => ProductVariantResource::collection($this->whenLoaded('variants')),
-            'reviews' => ReviewResource::collection($this->whenLoaded('reviews')),
+            // 'reviews' => ReviewResource::collection($this->whenLoaded('reviews')),
             'created_at' => $this->created_at?->toISOString(),
         ];
     }

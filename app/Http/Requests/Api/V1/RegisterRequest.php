@@ -26,6 +26,8 @@ class RegisterRequest extends FormRequest
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'phone' => ['required', 'string', 'max:20', 'unique:users,phone'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'fcm_token' => ['nullable', 'string', 'max:500'],
+            'lang' => ['sometimes', 'string', 'in:en,ar'],
             'accept_terms' => ['required', 'accepted'],
         ];
     }
@@ -47,6 +49,7 @@ class RegisterRequest extends FormRequest
             'password.required' => __('api.validation.password_required'),
             'password.min' => __('api.validation.password_min'),
             'password.confirmed' => __('api.validation.password_confirmation_mismatch'),
+            'lang.in' => __('api.validation.lang_invalid'),
             'accept_terms.accepted' => __('api.validation.terms_required'),
         ];
     }

@@ -38,7 +38,7 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
-        $data = $request->only(['name', 'email', 'phone']);
+        $data = $request->only(['name', 'email', 'phone', 'lang']);
 
         if ($request->hasFile('avatar')) {
             if ($user->avatar) {

@@ -45,7 +45,7 @@ it('logs a user in using email', function (): void {
 });
 
 it('returns home screen data', function (): void {
-    Category::factory()->create(['name' => 'عطور نسائية']);
+    Category::factory()->create(['name' => ['en' => 'Women Perfumes', 'ar' => 'عطور نسائية']]);
     $this->product->update(['is_featured' => true]);
 
     $response = $this->getJson('/api/v1/home');
@@ -174,4 +174,49 @@ it('guards protected routes for guests', function (): void {
     Sanctum::actingAs($this->user);
 
     $this->getJson('/api/v1/profile')->assertOk();
+});
+
+it('registers a new user with a selected language and returns a localized message', function (): void {
+    $response = $this->postJson('/api/v1/auth/register', [
+        'name' => 'سارة أحمد',
+        'email' => 'sara.lang@example.com',
+        'phone' => '+966 50 555 6666',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+        'accept_terms' => true,
+        'lang' => 'ar',
+    ]);
+
+    $response->assertCreated()
+        ->assertJsonPath('message', 'تم إنشاء الحساب بنجاح.')
+        ->assertJsonPath('user.lang', 'ar');
+
+    $this->assertDatabaseHas('users', ['email' => 'sara.lang@example.com', 'lang' => 'ar']);
+});
+
+it('updates the profile language and returns a localized message', function (): void {
+    $response = $this->putJson('/api/v1/profile', [
+        'name' => 'محمد',
+        'lang' => 'ar',
+    ]);
+
+    $response->assertOk()
+        ->assertJsonPath('message', 'تم تحديث البيانات بنجاح.')
+        ->assertJsonPath('user.lang', 'ar');
+
+    $this->assertDatabaseHas('users', ['id' => $this->user->id, 'lang' => 'ar']);
+});
+
+it('honors the lang header for messages on any endpoint', function (): void {
+    $this->putJson('/api/v1/profile', ['name' => 'علي'], ['lang' => 'ar'])
+        ->assertOk()
+        ->assertJsonPath('message', 'تم تحديث البيانات بنجاح.');
+});
+
+it('uses the saved user language across endpoints when no lang is sent', function (): void {
+    $this->user->update(['lang' => 'ar']);
+
+    $this->putJson('/api/v1/profile', ['name' => 'محمد'])
+        ->assertOk()
+        ->assertJsonPath('message', 'تم تحديث البيانات بنجاح.');
 });

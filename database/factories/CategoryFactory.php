@@ -21,9 +21,9 @@ class CategoryFactory extends Factory
 
         return [
             'parent_id' => null,
-            'name' => fake()->unique()->words(2, true),
+            'name' => ['en' => fake()->unique()->words(2, true), 'ar' => fake()->unique()->words(2, true)],
             'slug' => fake()->unique()->slug(2),
-            'description' => fake()->sentence(),
+            'description' => ['en' => fake()->sentence(), 'ar' => fake()->sentence()],
             'image' => 'categories/'.fake()->uuid().'.jpg',
             'type' => $type,
             'is_active' => true,

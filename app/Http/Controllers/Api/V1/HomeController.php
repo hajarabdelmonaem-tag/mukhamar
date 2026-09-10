@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\HomeResource;
+use App\Models\Banner;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Http\JsonResponse;
@@ -15,15 +16,17 @@ class HomeController extends Controller
      */
     public function index(): JsonResponse
     {
+        $banners = Banner::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->get();
         $home = [
-            'banners' => [
-                [
-                    'id' => 'winter',
-                    'title' => __('api.home.banner_title'),
-                    'subtitle' => __('api.home.banner_subtitle'),
-                    'image' => 'banners/winter.jpg',
-                ],
-            ],
+            'banners' => $banners->map(function ($banner) {
+                return [
+                    'id' => $banner->id,
+                    'image' => $banner->image,
+                ];
+            }),
             'categories' => Category::query()
                 ->withCount('products')
                 ->where('parent_id', null)

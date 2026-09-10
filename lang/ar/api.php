@@ -45,6 +45,12 @@ return [
             'in_transit' => 'قيد التوصيل',
             'delivered' => 'تم التسليم',
         ],
+        'payment_status' => [
+            'pending' => 'قيد الانتظار',
+            'paid' => 'مدفوع',
+            'failed' => 'فشل',
+            'refunded' => 'مسترجع',
+        ],
     ],
 
     'order_enquiry' => [
@@ -134,6 +140,7 @@ return [
         'street_required' => 'الشارع مطلوب.',
         'address_label_invalid' => 'نوع العنوان غير صالح.',
         'message_required' => 'الرسالة مطلوبة.',
+        'lang_invalid' => 'اللغة يجب أن تكون إما en أو ar.',
     ],
 
 ];

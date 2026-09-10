@@ -45,6 +45,12 @@ return [
             'in_transit' => 'In delivery',
             'delivered' => 'Delivered',
         ],
+        'payment_status' => [
+            'pending' => 'Pending',
+            'paid' => 'Paid',
+            'failed' => 'Failed',
+            'refunded' => 'Refunded',
+        ],
     ],
 
     'order_enquiry' => [
@@ -134,6 +140,7 @@ return [
         'street_required' => 'Street is required.',
         'address_label_invalid' => 'Address type is invalid.',
         'message_required' => 'Message is required.',
+        'lang_invalid' => 'Language must be one of: en, ar.',
     ],
 
 ];

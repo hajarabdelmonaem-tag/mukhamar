@@ -15,7 +15,17 @@ class SetLocale
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $locale = $request->header('X-Locale') ?? $request->query('lang');
+        $locale = $request->header('X-Locale')
+            ?? $request->header('lang')
+            ?? $request->input('lang');
+
+        if (! $locale && $request->hasSession()) {
+            $locale = $request->session()->get('locale');
+        }
+
+        if (! $locale && $request->is('api/*')) {
+            $locale = $request->user()?->lang ?? $request->user('sanctum')?->lang;
+        }
 
         if (! $locale) {
             $locale = $request->getPreferredLanguage(self::SUPPORTED_LOCALES);
@@ -23,6 +33,10 @@ class SetLocale
 
         if ($locale && in_array($locale, self::SUPPORTED_LOCALES, true)) {
             app()->setLocale($locale);
+
+            if ($request->hasSession()) {
+                $request->session()->put('locale', $locale);
+            }
         }
 
         return $next($request);

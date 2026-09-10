@@ -13,7 +13,7 @@ class PageController extends Controller
      */
     public function terms(): JsonResponse
     {
-        return $this->show('terms');
+        return $this->show('terms_conditions');
     }
 
     /**
@@ -21,7 +21,7 @@ class PageController extends Controller
      */
     public function policy(): JsonResponse
     {
-        return $this->show('policy');
+        return $this->show('privacy_policy');
     }
 
     /**
@@ -29,9 +29,10 @@ class PageController extends Controller
      */
     private function show(string $key): JsonResponse
     {
-        $page = Setting::query()->where('key', $key)->value('value');
+        $document = Setting::query()->where('key', $key)->value('value')
+            ?? Setting::query()->where('key', $this->legacyKey($key))->value('value');
 
-        if (! $page) {
+        if (! $document) {
             return response()->json([
                 'data' => null,
             ], 404);
@@ -39,13 +40,25 @@ class PageController extends Controller
 
         return response()->json([
             'data' => [
-                'title' => $this->localize($page['title'] ?? []),
-                'sections' => collect($page['sections'] ?? [])->map(fn (array $section): array => [
+                'title' => $this->localize($document['title'] ?? []),
+                'sections' => collect($document['sections'] ?? [])->map(fn (array $section): array => [
                     'heading' => $this->localize($section['heading'] ?? []),
                     'body' => $this->localize($section['body'] ?? []),
-                ])->all(),
+                ])->values()->all(),
             ],
         ]);
+    }
+
+    /**
+     * The legacy settings key that stored this page before the refactor.
+     */
+    private function legacyKey(string $key): ?string
+    {
+        return match ($key) {
+            'terms_conditions' => 'terms',
+            'privacy_policy' => 'policy',
+            default => null,
+        };
     }
 
     /**

@@ -29,6 +29,7 @@ class UpdateProfileRequest extends FormRequest
             'email' => ['sometimes', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'phone' => ['sometimes', 'string', 'max:20', Rule::unique('users', 'phone')->ignore($user->id)],
             'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'lang' => ['sometimes', 'string', 'in:en,ar'],
         ];
     }
 
@@ -46,6 +47,7 @@ class UpdateProfileRequest extends FormRequest
             'phone.unique' => __('api.validation.phone_taken'),
             'phone.max' => __('api.validation.phone_too_long'),
             'avatar.image' => __('api.validation.avatar_image'),
+            'lang.in' => __('api.validation.lang_invalid'),
         ];
     }
 }

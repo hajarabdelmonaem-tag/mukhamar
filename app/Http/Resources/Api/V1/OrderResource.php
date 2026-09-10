@@ -21,6 +21,7 @@ class OrderResource extends JsonResource
             'status_label' => $this->statusLabel(),
             'payment_method' => $this->payment_method,
             'payment_status' => $this->payment_status,
+            'payment_status_label' => $this->paymentStatusLabel(),
             'subtotal' => (float) $this->subtotal,
             'shipping' => (float) $this->shipping,
             'discount' => (float) $this->discount,
@@ -49,6 +50,20 @@ class OrderResource extends JsonResource
             'delivered' => __('api.order.status.delivered'),
             'cancelled' => __('api.order.status.cancelled'),
             default => $this->status,
+        };
+    }
+
+    /**
+     * Human-readable localized label for the payment status.
+     */
+    private function paymentStatusLabel(): string
+    {
+        return match ($this->payment_status) {
+            'pending' => __('api.order.payment_status.pending'),
+            'paid' => __('api.order.payment_status.paid'),
+            'failed' => __('api.order.payment_status.failed'),
+            'refunded' => __('api.order.payment_status.refunded'),
+            default => (string) $this->payment_status,
         };
     }
 

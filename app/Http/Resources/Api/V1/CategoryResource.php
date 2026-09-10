@@ -20,7 +20,7 @@ class CategoryResource extends JsonResource
             'name' => $this->name,
             'slug' => $this->slug,
             'description' => $this->description,
-            'image' => $this->image,
+            'image' => $this->when($this->image, fn (): ?string => str_starts_with($this->image, 'http') ? $this->image : asset('storage/'.$this->image)),
             'type' => $this->type,
             'products_count' => $this->whenCounted('products'),
             'children' => CategoryResource::collection($this->whenLoaded('children')),
