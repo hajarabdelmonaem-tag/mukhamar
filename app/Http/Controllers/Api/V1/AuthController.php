@@ -126,11 +126,15 @@ class AuthController extends Controller
         }
         $user->update(['phone_verified_at' => now()]);
 
-        $token = $user->createToken('mobile')->plainTextToken;
+        $accessToken = $user->createToken('mobile');
+
+        if ($request->filled('fcm_token')) {
+            $accessToken->accessToken->forceFill(['fcm_token' => $request->validated('fcm_token')])->save();
+        }
 
         return response()->json([
             'message' => __('api.auth.otp_verified'),
-            'token' => $token,
+            'token' => $accessToken->plainTextToken,
             'user' => new UserResource($user->refresh()),
         ]);
     }

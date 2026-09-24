@@ -24,6 +24,7 @@ class VerifyOtpRequest extends FormRequest
         return [
             'phone' => ['required', 'string', 'max:20'],
             'otp' => ['required', 'string', 'digits:4'],
+            'fcm_token' => ['nullable', 'string', 'max:255'],
         ];
     }
 
