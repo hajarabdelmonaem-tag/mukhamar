@@ -17,9 +17,10 @@ class HomeResource extends JsonResource
         $featured = $this->resource['featured'] ?? collect();
         $categories = $this->resource['categories'] ?? collect();
         $bestSellers = $this->resource['best_sellers'] ?? collect();
+        $banners = $this->resource['banners'] ?? collect();
 
         return [
-            'banners' => $this->resource['banners'] ?? [],
+            'banners' => BannerResource::collection($banners),
             'categories' => CategoryResource::collection($categories),
             'featured' => ProductResource::collection($featured),
             'best_sellers' => ProductResource::collection($bestSellers),

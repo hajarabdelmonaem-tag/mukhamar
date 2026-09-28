@@ -18,12 +18,23 @@ class BannerFactory extends Factory
     public function definition(): array
     {
         return [
-            'title' => fake()->sentence(4),
-            'description' => fake()->paragraph(),
-            'image' => fake()->imageUrl(),
+            'title' => ['en' => fake()->sentence(4), 'ar' => fake()->sentence(4)],
+            'description' => ['en' => fake()->paragraph(), 'ar' => fake()->paragraph()],
+            'image' => 'banners/'.fake()->uuid().'.jpg',
+            'link' => null,
             'position' => fake()->randomElement(['home', 'shop']),
             'sort_order' => fake()->numberBetween(0, 100),
             'is_active' => true,
         ];
+    }
+
+    /**
+     * Indicate the banner is inactive.
+     */
+    public function inactive(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_active' => false,
+        ]);
     }
 }

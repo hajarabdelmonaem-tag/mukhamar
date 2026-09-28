@@ -21,12 +21,7 @@ class HomeController extends Controller
             ->orderBy('sort_order')
             ->get();
         $home = [
-            'banners' => $banners->map(function ($banner) {
-                return [
-                    'id' => $banner->id,
-                    'image' => $banner->image,
-                ];
-            }),
+            'banners' => $banners,
             'categories' => Category::query()
                 ->withCount('products')
                 ->where('parent_id', null)

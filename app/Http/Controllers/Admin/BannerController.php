@@ -34,14 +34,13 @@ class BannerController extends Controller
      */
     public function store(Request $request)
     {
-        $data = $request->validate([
-            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-            'sort_order' => ['nullable', 'integer'],
-        ]);
+        $data = $request->validate($this->rules());
 
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('banners', 'public');
         }
+
+        $data['is_active'] = $request->boolean('is_active');
 
         Banner::create($data);
 
@@ -65,14 +64,13 @@ class BannerController extends Controller
      */
     public function update(Request $request, Banner $banner)
     {
-        $data = $request->validate([
-            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-            'sort_order' => ['nullable', 'integer'],
-        ]);
+        $data = $request->validate($this->rules());
 
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('banners', 'public');
         }
+
+        $data['is_active'] = $request->boolean('is_active');
 
         $banner->update($data);
 
@@ -89,5 +87,27 @@ class BannerController extends Controller
 
         return redirect()->route('admin.banners.index')
             ->with('success', __('admin.banners.deleted'));
+    }
+
+    /**
+     * The validation rules shared by the store and update actions.
+     *
+     * @return array<string, array<int, string>>
+     */
+    private function rules(): array
+    {
+        return [
+            'title' => ['required', 'array'],
+            'title.en' => ['required', 'string', 'max:255'],
+            'title.ar' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'array'],
+            'description.en' => ['nullable', 'string'],
+            'description.ar' => ['nullable', 'string'],
+            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'link' => ['nullable', 'string', 'max:255'],
+            'position' => ['nullable', 'string', 'max:255'],
+            'sort_order' => ['nullable', 'integer'],
+            'is_active' => ['boolean'],
+        ];
     }
 }

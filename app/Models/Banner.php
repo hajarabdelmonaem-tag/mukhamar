@@ -6,12 +6,32 @@ use Database\Factories\BannerFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Translatable\HasTranslations;
 
 #[Fillable(['title', 'description', 'image', 'link', 'position', 'sort_order', 'is_active'])]
 class Banner extends Model
 {
     /** @use HasFactory<BannerFactory> */
-    use HasFactory;
+    use HasFactory, HasTranslations;
+
+    /**
+     * The translatable attributes.
+     *
+     * @var array<int, string>
+     */
+    public array $translatable = ['title', 'description'];
+
+    /**
+     * The full public URL of the banner image.
+     */
+    public function getImageUrlAttribute(): ?string
+    {
+        if (blank($this->image)) {
+            return null;
+        }
+
+        return str_starts_with($this->image, 'http') ? $this->image : asset('storage/'.$this->image);
+    }
 
     /**
      * The attributes that should be cast.

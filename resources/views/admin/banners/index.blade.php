@@ -27,22 +27,32 @@
         <table class="w-full text-start text-sm">
             <thead>
                 <tr class="border-b border-gray-200 text-gray-500 dark:border-gray-800 dark:text-gray-400">
+                    <th class="px-6 py-3 font-medium">{{ __('admin.table.title') }}</th>
+                    <th class="px-6 py-3 font-medium">{{ __('admin.table.description') }}</th>
                     <th class="px-6 py-3 font-medium">{{ __('admin.table.image') }}</th>
                     <th class="px-6 py-3 font-medium">{{ __('admin.table.sort') }}</th>
+                    <th class="px-6 py-3 font-medium">{{ __('admin.status.active') }}</th>
                     <th class="px-6 py-3 font-medium text-end">{{ __('admin.actions.actions') }}</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($banners as $banner)
                     <tr class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                        <td class="px-6 py-4 font-medium text-gray-800 dark:text-white">{{ $banner->title }}</td>
+                        <td class="max-w-xs px-6 py-4 text-gray-700 dark:text-gray-300">{{ Str::limit($banner->description, 60) }}</td>
                         <td class="px-6 py-4">
                             @if($banner->image)
-                                <img src="{{ str_starts_with($banner->image, 'http') ? $banner->image : \Illuminate\Support\Facades\Storage::url($banner->image) }}" class="h-16 w-24 rounded-lg object-cover">
+                                <img src="{{ $banner->image_url }}" alt="{{ $banner->title }}" class="h-10 w-10 rounded-lg object-cover">
                             @else
                                 <span class="text-gray-400 dark:text-gray-600">—</span>
                             @endif
                         </td>
                         <td class="px-6 py-4 text-gray-700 dark:text-gray-300">{{ $banner->sort_order }}</td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium {{ $banner->is_active ? 'bg-success-50 text-success-600 dark:bg-success-500/20 dark:text-success-400' : 'bg-error-50 text-error-600 dark:bg-error-500/20 dark:text-error-400' }}">
+                                {{ $banner->is_active ? __('admin.status.active') : __('admin.status.inactive') }}
+                            </span>
+                        </td>
                         <td class="px-6 py-4">
                             <div class="flex items-center justify-end gap-2">
                                 <a href="{{ route('admin.banners.edit', $banner) }}" class="inline-flex items-center justify-center rounded-lg border border-gray-200 p-2 text-gray-500 transition hover:bg-brand-50 hover:text-brand-500 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-brand-500/10">
@@ -59,7 +69,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="3" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">{{ __('admin.empty.banners') }}</td></tr>
+                    <tr><td colspan="6" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">{{ __('admin.empty.banners') }}</td></tr>
                 @endforelse
             </tbody>
         </table>
