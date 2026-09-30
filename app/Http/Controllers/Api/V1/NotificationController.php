@@ -40,7 +40,7 @@ class NotificationController extends Controller
                 'total' => $notifications->total(),
             ],
             'unread_count' => Notification::where('user_id', $request->user()->id)
-                ->whereNull('read_at')
+                ->where('read_at', null)
                 ->count(),
         ]);
     }
