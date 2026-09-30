@@ -20,15 +20,22 @@ class NotificationController extends Controller
             ->latest()
             ->paginate($request->integer('per_page', 15));
 
+        $unreadCount = Notification::query()
+            ->where('user_id', $request->user()->id)
+            ->whereNull('read_at')
+            ->count();
+
         $readAt = now();
 
         Notification::query()
-            ->whereKey($notifications->getCollection()->modelKeys())
+            ->where('user_id', $request->user()->id)
             ->whereNull('read_at')
             ->update(['read_at' => $readAt]);
 
         $notifications->getCollection()->each(function (Notification $notification) use ($readAt): void {
-            $notification->forceFill(['read_at' => $readAt]);
+            if (! $notification->isRead()) {
+                $notification->forceFill(['read_at' => $readAt]);
+            }
         });
 
         return response()->json([
@@ -39,9 +46,22 @@ class NotificationController extends Controller
                 'per_page' => $notifications->perPage(),
                 'total' => $notifications->total(),
             ],
-            'unread_count' => Notification::where('user_id', $request->user()->id)
-                ->where('read_at', null)
-                ->count(),
+            'unread_count' => $unreadCount,
+        ]);
+    }
+
+    /**
+     * Get the number of unread notifications without marking anything as read.
+     */
+    public function unreadCount(Request $request): JsonResponse
+    {
+        return response()->json([
+            'data' => [
+                'unread_count' => Notification::query()
+                    ->where('user_id', $request->user()->id)
+                    ->whereNull('read_at')
+                    ->count(),
+            ],
         ]);
     }
 
