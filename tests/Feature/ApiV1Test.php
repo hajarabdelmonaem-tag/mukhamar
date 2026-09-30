@@ -54,6 +54,18 @@ it('returns home screen data', function (): void {
         ->assertJsonStructure(['data' => ['categories', 'featured', 'best_sellers']]);
 });
 
+it('returns only products with the bestseller badge in home best sellers', function (): void {
+    $this->product->update(['badges' => null]);
+    $bestSeller = Product::factory()->create(['badges' => ['new', 'bestseller']]);
+    Product::factory()->create(['badges' => ['sale']]);
+
+    $response = $this->getJson('/api/v1/home');
+
+    $response->assertOk()
+        ->assertJsonCount(1, 'data.best_sellers')
+        ->assertJsonPath('data.best_sellers.0.id', $bestSeller->id);
+});
+
 it('lists products with pagination metadata', function (): void {
     $response = $this->getJson('/api/v1/products');
 

@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 class NotificationController extends Controller
 {
     /**
-     * List the authenticated user's notifications.
+     * List the authenticated user's notifications and mark the returned page as read.
      */
     public function index(Request $request): JsonResponse
     {
@@ -19,6 +19,17 @@ class NotificationController extends Controller
             ->where('user_id', $request->user()->id)
             ->latest()
             ->paginate($request->integer('per_page', 15));
+
+        $readAt = now();
+
+        Notification::query()
+            ->whereKey($notifications->getCollection()->modelKeys())
+            ->whereNull('read_at')
+            ->update(['read_at' => $readAt]);
+
+        $notifications->getCollection()->each(function (Notification $notification) use ($readAt): void {
+            $notification->forceFill(['read_at' => $readAt]);
+        });
 
         return response()->json([
             'data' => NotificationResource::collection($notifications),
@@ -41,11 +52,13 @@ class NotificationController extends Controller
     {
         $this->authorizeNotification($request, $notification);
 
-        $notification->update(['read_at' => $notification->read_at ?? now()]);
+        if (! $notification->isRead()) {
+            $notification->update(['read_at' => now()]);
+        }
 
         return response()->json([
             'message' => __('api.notification.updated'),
-            'data' => new NotificationResource($notification->fresh()),
+            'data' => new NotificationResource($notification),
         ]);
     }
 

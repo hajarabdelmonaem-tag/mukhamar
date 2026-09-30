@@ -7,7 +7,9 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class ProductController extends Controller
 {
@@ -42,54 +44,18 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-        $data = $request->validate([
-            'category_id' => ['required', 'exists:categories,id'],
-            'name' => ['required', 'array'],
-            'name.en' => ['required', 'string', 'max:255'],
-            'name.ar' => ['required', 'string', 'max:255'],
-            'slug' => ['nullable', 'string', 'max:255', 'unique:products'],
-            'description' => ['nullable', 'array'],
-            'description.en' => ['nullable', 'string'],
-            'description.ar' => ['nullable', 'string'],
-            'usage_instructions' => ['nullable', 'array'],
-            'usage_instructions.en' => ['nullable', 'string'],
-            'usage_instructions.ar' => ['nullable', 'string'],
-            'price' => ['required', 'numeric', 'min:0'],
-            'old_price' => ['nullable', 'numeric', 'min:0'],
-            'top_notes' => ['nullable', 'array'],
-            'top_notes.en' => ['nullable', 'string'],
-            'top_notes.ar' => ['nullable', 'string'],
-            'heart_notes' => ['nullable', 'array'],
-            'heart_notes.en' => ['nullable', 'string'],
-            'heart_notes.ar' => ['nullable', 'string'],
-            'base_notes' => ['nullable', 'array'],
-            'base_notes.en' => ['nullable', 'string'],
-            'base_notes.ar' => ['nullable', 'string'],
-            'badges' => ['nullable', 'array'],
-            'images' => ['nullable', 'array'],
-            'images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-            'is_featured' => ['boolean'],
-            'is_active' => ['boolean'],
-            'variants' => ['nullable', 'array'],
-            'variants.*.name.en' => ['required_with:variants', 'string', 'max:255'],
-            'variants.*.name.ar' => ['required_with:variants', 'string', 'max:255'],
-            'variants.*.unit.en' => ['nullable', 'string', 'max:50'],
-            'variants.*.unit.ar' => ['nullable', 'string', 'max:50'],
-            'variants.*.price_adjustment' => ['nullable', 'numeric'],
-            'variants.*.sku' => ['nullable', 'string', 'max:255', 'unique:product_variants,sku'],
-            'variants.*.stock' => ['nullable', 'integer', 'min:0'],
-            'variants.*.is_default' => ['boolean'],
-            'variants.*.is_active' => ['boolean'],
-        ]);
+        $data = $request->validate($this->rules($request));
 
         $data['slug'] = $data['slug'] ?? Str::slug($data['name']['en']);
         $data['is_featured'] = $request->boolean('is_featured');
         $data['is_active'] = $request->boolean('is_active');
 
-        $product = Product::create($data);
+        DB::transaction(function () use ($data, $request): void {
+            $product = Product::create($data);
 
-        $this->saveImages($product, $request);
-        $this->syncVariants($product, $request);
+            $this->saveImages($product, $request);
+            $this->syncVariants($product, $request->input('variants', []));
+        });
 
         return redirect()->route('admin.products.index')
             ->with('success', __('admin.products.created'));
@@ -114,12 +80,41 @@ class ProductController extends Controller
      */
     public function update(Request $request, Product $product)
     {
-        $data = $request->validate([
+        $data = $request->validate($this->rules($request, $product));
+
+        $data['slug'] = $data['slug'] ?? Str::slug($data['name']['en']);
+        $data['is_featured'] = $request->boolean('is_featured');
+        $data['is_active'] = $request->boolean('is_active');
+
+        DB::transaction(function () use ($data, $product, $request): void {
+            $product->update($data);
+
+            $this->saveImages($product, $request);
+            $this->syncVariants($product, $request->input('variants', []));
+        });
+
+        return redirect()->route('admin.products.index')
+            ->with('success', __('admin.products.updated'));
+    }
+
+    /**
+     * The validation rules shared by the store and update actions.
+     *
+     * @return array<string, mixed>
+     */
+    private function rules(Request $request, ?Product $product = null): array
+    {
+        $rules = [
             'category_id' => ['required', 'exists:categories,id'],
             'name' => ['required', 'array'],
             'name.en' => ['required', 'string', 'max:255'],
             'name.ar' => ['required', 'string', 'max:255'],
-            'slug' => ['nullable', 'string', 'max:255', 'unique:products,slug,'.$product->id],
+            'slug' => [
+                'nullable',
+                'string',
+                'max:255',
+                Rule::unique('products', 'slug')->ignore($product?->id),
+            ],
             'description' => ['nullable', 'array'],
             'description.en' => ['nullable', 'string'],
             'description.ar' => ['nullable', 'string'],
@@ -148,24 +143,26 @@ class ProductController extends Controller
             'variants.*.name.ar' => ['required_with:variants', 'string', 'max:255'],
             'variants.*.unit.en' => ['nullable', 'string', 'max:50'],
             'variants.*.unit.ar' => ['nullable', 'string', 'max:50'],
-            'variants.*.price_adjustment' => ['nullable', 'numeric'],
-            'variants.*.sku' => ['nullable', 'string', 'max:255', 'unique:product_variants,sku,variants.*.id'],
+            'variants.*.price_adjustment' => ['nullable', 'numeric', 'min:0'],
             'variants.*.stock' => ['nullable', 'integer', 'min:0'],
             'variants.*.is_default' => ['boolean'],
             'variants.*.is_active' => ['boolean'],
-        ]);
+        ];
 
-        $data['slug'] = $data['slug'] ?? Str::slug($data['name']['en']);
-        $data['is_featured'] = $request->boolean('is_featured');
-        $data['is_active'] = $request->boolean('is_active');
+        $ownedVariantIds = $product?->variants()->pluck('id')->map(fn ($id) => (int) $id)->all() ?? [];
 
-        $product->update($data);
+        foreach ($request->input('variants', []) as $index => $variant) {
+            $rules["variants.$index.sku"] = [
+                'nullable',
+                'string',
+                'max:255',
+                Rule::unique('product_variants', 'sku')->ignore(
+                    in_array((int) ($variant['id'] ?? 0), $ownedVariantIds, true) ? (int) $variant['id'] : null,
+                ),
+            ];
+        }
 
-        $this->saveImages($product, $request);
-        $this->syncVariants($product, $request);
-
-        return redirect()->route('admin.products.index')
-            ->with('success', __('admin.products.updated'));
+        return $rules;
     }
 
     /**
@@ -192,20 +189,29 @@ class ProductController extends Controller
 
     /**
      * Sync variants submitted from the product form.
+     *
+     * @param  array<int, array<string, mixed>>  $rows
      */
-    private function syncVariants(Product $product, Request $request): void
+    private function syncVariants(Product $product, array $rows): void
     {
-        $submittedIds = [];
+        $persisted = $product->variants()->get()->keyBy('id');
+        $keptIds = [];
+        $hasDefault = false;
 
-        foreach ($request->input('variants', []) as $row) {
-            if (empty($row['name']['en'] ?? null)) {
+        foreach ($rows as $row) {
+            if (blank($row['name']['en'] ?? null)) {
                 continue;
             }
 
-            $submittedIds[] = $row['id'] ?? null;
+            $variantId = (int) ($row['id'] ?? 0);
+            $variant = $persisted->has($variantId)
+                ? $persisted->get($variantId)
+                : new ProductVariant(['product_id' => $product->id]);
 
-            $variantData = [
-                'product_id' => $product->id,
+            $isDefault = ! $hasDefault && (bool) ($row['is_default'] ?? false);
+            $hasDefault = $hasDefault || $isDefault;
+
+            $variant->fill([
                 'name' => ['en' => $row['name']['en'], 'ar' => $row['name']['ar'] ?? ''],
                 'unit' => [
                     'en' => $row['unit']['en'] ?? null,
@@ -214,20 +220,15 @@ class ProductController extends Controller
                 'price_adjustment' => $row['price_adjustment'] ?? 0,
                 'sku' => $row['sku'] ?? null,
                 'stock' => $row['stock'] ?? 0,
-                'is_default' => (bool) ($row['is_default'] ?? false),
-                'is_active' => (bool) ($row['is_active'] ?? true),
-            ];
+                'is_default' => $isDefault,
+                'is_active' => (bool) ($row['is_active'] ?? false),
+            ]);
+            $variant->save();
 
-            if (! empty($row['id']) && ProductVariant::where('id', $row['id'])->where('product_id', $product->id)->exists()) {
-                ProductVariant::where('id', $row['id'])->update($variantData);
-            } else {
-                ProductVariant::create($variantData);
-            }
+            $keptIds[] = $variant->id;
         }
 
-        ProductVariant::where('product_id', $product->id)
-            ->whereNotIn('id', array_filter($submittedIds))
-            ->delete();
+        $product->variants()->whereNotIn('id', $keptIds)->delete();
     }
 
     /**

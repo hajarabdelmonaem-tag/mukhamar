@@ -94,19 +94,26 @@
             </div>
             <div class="sm:col-span-2">
                 <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">{{ __('admin.products.badges') }}</label>
+                @php $selectedBadges = old('badges', []) ?? []; @endphp
                 <div class="flex flex-wrap gap-4">
                     @foreach(['new', 'sale', 'bestseller', 'hot'] as $badge)
-                        <label class="flex cursor-pointer items-center">
-                            <input type="checkbox" name="badges[]" value="{{ $badge }}" {{ in_array($badge, old('badges', [])) ? 'checked' : '' }} class="sr-only" />
-                            <div class="mr-2 flex h-5 w-5 items-center justify-center rounded-md border-[1.25px] border-gray-300 dark:border-gray-700"></div>
-                            <span class="text-sm font-normal text-gray-700 dark:text-gray-400">{{ __('admin.status.'.$badge) }}</span>
-                        </label>
+                        <div x-data="{ checked: @js(in_array($badge, $selectedBadges)) }">
+                            <label class="flex cursor-pointer items-center">
+                                <input type="checkbox" name="badges[]" value="{{ $badge }}" {{ in_array($badge, $selectedBadges) ? 'checked' : '' }} x-model="checked" class="sr-only" />
+                                <div :class="checked ? 'border-brand-500 bg-brand-500' : 'border-gray-300 dark:border-gray-700 bg-transparent'"
+                                    class="mr-2 flex h-5 w-5 items-center justify-center rounded-md border-[1.25px]">
+                                    <span :class="checked ? '' : 'opacity-0'"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M11.6666 3.5L5.24992 9.91667L2.33325 7" stroke="white" stroke-width="1.94437" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+                                </div>
+                                <span class="text-sm font-normal text-gray-700 dark:text-gray-400">{{ __('admin.status.'.$badge) }}</span>
+                            </label>
+                        </div>
                     @endforeach
                 </div>
             </div>
             <div class="sm:col-span-2 flex flex-wrap items-center gap-6">
-                <div x-data="{ isFeatured: false }">
+                <div x-data="{ isFeatured: @js((bool) old('is_featured')) }">
                     <label class="flex cursor-pointer items-center select-none">
+                        <input type="hidden" name="is_featured" value="0" />
                         <input type="checkbox" name="is_featured" value="1" {{ old('is_featured') ? 'checked' : '' }} @change="isFeatured = $event.target.checked" class="sr-only" />
                         <div :class="isFeatured ? 'border-brand-500 bg-brand-500' : 'bg-transparent border-gray-300 dark:border-gray-700'"
                             class="mr-3 flex h-5 w-5 items-center justify-center rounded-md border-[1.25px]">
@@ -115,9 +122,10 @@
                         <span class="text-sm font-normal text-gray-700 dark:text-gray-400">{{ __('admin.table.featured') }}</span>
                     </label>
                 </div>
-                <div x-data="{ isActive: true }">
+                <div x-data="{ isActive: @js((bool) old('is_active', true)) }">
                     <label class="flex cursor-pointer items-center select-none">
-                        <input type="checkbox" name="is_active" value="1" checked @change="isActive = $event.target.checked" class="sr-only" />
+                        <input type="hidden" name="is_active" value="0" />
+                        <input type="checkbox" name="is_active" value="1" {{ old('is_active', true) ? 'checked' : '' }} @change="isActive = $event.target.checked" class="sr-only" />
                         <div :class="isActive ? 'border-brand-500 bg-brand-500' : 'bg-transparent border-gray-300 dark:border-gray-700'"
                             class="mr-3 flex h-5 w-5 items-center justify-center rounded-md border-[1.25px]">
                             <span :class="isActive ? '' : 'opacity-0'"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M11.6666 3.5L5.24992 9.91667L2.33325 7" stroke="white" stroke-width="1.94437" stroke-linecap="round" stroke-linejoin="round" /></svg></span>

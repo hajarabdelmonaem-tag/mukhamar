@@ -39,7 +39,7 @@ class HomeController extends Controller
             'best_sellers' => Product::query()
                 ->with(['category', 'images', 'variants'])
                 ->where('is_active', true)
-                ->where('reviews_count', '>', 0)
+                ->whereJsonContains('badges', 'bestseller')
                 ->orderByDesc('reviews_count')
                 ->take(8)
                 ->get(),

@@ -110,17 +110,23 @@
                 <div class="flex flex-wrap gap-4">
                     @php $productBadges = old('badges', $product->badges ?? []) ?? []; @endphp
                     @foreach(['new', 'sale', 'bestseller', 'hot'] as $badge)
-                        <label class="flex cursor-pointer items-center">
-                            <input type="checkbox" name="badges[]" value="{{ $badge }}" {{ in_array($badge, $productBadges) ? 'checked' : '' }} class="sr-only" />
-                            <div class="mr-2 flex h-5 w-5 items-center justify-center rounded-md border-[1.25px] {{ in_array($badge, $productBadges) ? 'border-brand-500 bg-brand-500' : 'border-gray-300 dark:border-gray-700' }}">@if(in_array($badge, $productBadges))<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M11.6666 3.5L5.24992 9.91667L2.33325 7" stroke="white" stroke-width="1.94437" stroke-linecap="round" stroke-linejoin="round" /></svg>@endif</div>
-                            <span class="text-sm font-normal text-gray-700 dark:text-gray-400">{{ __('admin.status.'.$badge) }}</span>
-                        </label>
+                        <div x-data="{ checked: @js(in_array($badge, $productBadges)) }">
+                            <label class="flex cursor-pointer items-center">
+                                <input type="checkbox" name="badges[]" value="{{ $badge }}" {{ in_array($badge, $productBadges) ? 'checked' : '' }} x-model="checked" class="sr-only" />
+                                <div :class="checked ? 'border-brand-500 bg-brand-500' : 'border-gray-300 dark:border-gray-700 bg-transparent'"
+                                    class="mr-2 flex h-5 w-5 items-center justify-center rounded-md border-[1.25px]">
+                                    <span :class="checked ? '' : 'opacity-0'"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M11.6666 3.5L5.24992 9.91667L2.33325 7" stroke="white" stroke-width="1.94437" stroke-linecap="round" stroke-linejoin="round" /></svg></span>
+                                </div>
+                                <span class="text-sm font-normal text-gray-700 dark:text-gray-400">{{ __('admin.status.'.$badge) }}</span>
+                            </label>
+                        </div>
                     @endforeach
                 </div>
             </div>
             <div class="sm:col-span-2 flex flex-wrap items-center gap-6">
                 <div x-data="{ isFeatured: {{ old('is_featured', $product->is_featured) ? 'true' : 'false' }} }">
                     <label class="flex cursor-pointer items-center select-none">
+                        <input type="hidden" name="is_featured" value="0" />
                         <input type="checkbox" name="is_featured" value="1" {{ old('is_featured', $product->is_featured) ? 'checked' : '' }} @change="isFeatured = $event.target.checked" class="sr-only" />
                         <div :class="isFeatured ? 'border-brand-500 bg-brand-500' : 'bg-transparent border-gray-300 dark:border-gray-700'"
                             class="mr-3 flex h-5 w-5 items-center justify-center rounded-md border-[1.25px]">
@@ -131,6 +137,7 @@
                 </div>
                 <div x-data="{ isActive: {{ old('is_active', $product->is_active) ? 'true' : 'false' }} }">
                     <label class="flex cursor-pointer items-center select-none">
+                        <input type="hidden" name="is_active" value="0" />
                         <input type="checkbox" name="is_active" value="1" {{ old('is_active', $product->is_active) ? 'checked' : '' }} @change="isActive = $event.target.checked" class="sr-only" />
                         <div :class="isActive ? 'border-brand-500 bg-brand-500' : 'bg-transparent border-gray-300 dark:border-gray-700'"
                             class="mr-3 flex h-5 w-5 items-center justify-center rounded-md border-[1.25px]">
