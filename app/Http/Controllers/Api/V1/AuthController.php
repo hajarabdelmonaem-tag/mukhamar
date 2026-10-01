@@ -22,7 +22,9 @@ class AuthController extends Controller
      */
     public function register(RegisterRequest $request): JsonResponse
     {
-        $user = User::query()->create($request->validated());
+        $user = User::query()->create($request->safe()->except('fcm_token'));
+
+        $user->claimFcmToken($request->validated('fcm_token'));
 
         $code = str_pad((string) mt_rand(0, 9999), 4, '0', STR_PAD_LEFT);
         $user->update(['phone_confirmation_code' => $code]);
@@ -61,6 +63,7 @@ class AuthController extends Controller
         }
 
         $user->update(['phone_verified_at' => now()]);
+        $user->claimFcmToken($request->validated('fcm_token'));
 
         $token = $user->createToken('mobile')->plainTextToken;
 
@@ -125,12 +128,9 @@ class AuthController extends Controller
             ]);
         }
         $user->update(['phone_verified_at' => now()]);
+        $user->claimFcmToken($request->validated('fcm_token'));
 
         $accessToken = $user->createToken('mobile');
-
-        if ($request->filled('fcm_token')) {
-            $accessToken->accessToken->forceFill(['fcm_token' => $request->validated('fcm_token')])->save();
-        }
 
         return response()->json([
             'message' => __('api.auth.otp_verified'),

@@ -24,6 +24,7 @@ class LoginRequest extends FormRequest
         return [
             'phone' => ['required', 'string', 'max:255'],
             'password' => ['required', 'string'],
+            'fcm_token' => ['nullable', 'string', 'max:500'],
         ];
     }
 
