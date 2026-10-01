@@ -52,26 +52,6 @@ class User extends Authenticatable
     }
 
     /**
-     * Claim an FCM device token for this user, releasing it from any other user.
-     *
-     * A device token must resolve to exactly one account, otherwise a broadcast to
-     * every user is delivered to the same device once per duplicated row.
-     */
-    public function claimFcmToken(?string $token): void
-    {
-        if (blank($token)) {
-            return;
-        }
-
-        static::query()
-            ->where('fcm_token', $token)
-            ->whereKeyNot($this->getKey())
-            ->update(['fcm_token' => null]);
-
-        $this->forceFill(['fcm_token' => $token])->save();
-    }
-
-    /**
      * The user's delivery addresses.
      */
     public function addresses(): HasMany

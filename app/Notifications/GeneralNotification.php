@@ -3,27 +3,13 @@
 namespace App\Notifications;
 
 use App\Notifications\Channels\UserNotificationChannel;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use NotificationChannels\Fcm\FcmChannel;
 use NotificationChannels\Fcm\FcmMessage;
 use NotificationChannels\Fcm\Resources\Notification as FcmNotification;
 
-class GeneralNotification extends Notification implements ShouldQueue
+class GeneralNotification extends Notification
 {
-    use Queueable;
-
-    /**
-     * The number of times the notification may be attempted.
-     */
-    public int $tries = 3;
-
-    /**
-     * The number of seconds the notification may run before timing out.
-     */
-    public int $timeout = 30;
-
     public function __construct(
         public string $title,
         public string $body,

@@ -7,7 +7,6 @@ use App\Models\Notification;
 use App\Models\User;
 use App\Notifications\GeneralNotification;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
 
 class NotificationController extends Controller
@@ -55,10 +54,7 @@ class NotificationController extends Controller
         if ($data['user_id']) {
             User::findOrFail($data['user_id'])->notify($notification);
         } else {
-            User::query()
-                ->where('is_active', true)
-                ->select(['id', 'fcm_token'])
-                ->chunkById(500, fn (Collection $users) => NotificationFacade::send($users, $notification));
+            NotificationFacade::send(User::where('is_active', true)->get(), $notification);
         }
 
         return redirect()->route('admin.notifications.index')
