@@ -26,10 +26,10 @@ class SettingSeeder extends Seeder
             'free_shipping_threshold' => 300,
             'maintenance_mode' => 'false',
             'socials' => [
-                ['name' => ['en' => 'Facebook', 'ar' => 'فيسبوك'], 'icon' => 'socials/facebook.png', 'link' => 'https://facebook.com/mukhamar'],
-                ['name' => ['en' => 'Instagram', 'ar' => 'انستغرام'], 'icon' => 'socials/instagram.png', 'link' => 'https://instagram.com/mukhamar'],
-                ['name' => ['en' => 'TikTok', 'ar' => 'تيك توك'], 'icon' => 'socials/tiktok.png', 'link' => 'https://tiktok.com/@mukhamar'],
-                ['name' => ['en' => 'X', 'ar' => 'إكس'], 'icon' => 'socials/x.png', 'link' => 'https://x.com/mukhamar'],
+                ['name' => ['en' => 'Facebook', 'ar' => 'فيسبوك'], 'icon' => null, 'link' => 'https://facebook.com/mukhamar'],
+                ['name' => ['en' => 'Instagram', 'ar' => 'انستغرام'], 'icon' => null, 'link' => 'https://instagram.com/mukhamar'],
+                ['name' => ['en' => 'TikTok', 'ar' => 'تيك توك'], 'icon' => null, 'link' => 'https://tiktok.com/@mukhamar'],
+                ['name' => ['en' => 'X', 'ar' => 'إكس'], 'icon' => null, 'link' => 'https://x.com/mukhamar'],
             ],
             'terms_conditions' => [
                 'title' => ['en' => 'Terms & Conditions', 'ar' => 'الشروط والأحكام'],

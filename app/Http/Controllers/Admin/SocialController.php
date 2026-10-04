@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class SocialController extends Controller
 {
@@ -73,9 +74,12 @@ class SocialController extends Controller
         abort_unless($socialLink, 404);
 
         $data = $this->validated($request);
+        $previousIcon = $socialLink['icon'] ?? null;
 
         if ($request->hasFile('icon')) {
             $data['icon'] = $request->file('icon')->store('socials', 'public');
+        } elseif (filled($previousIcon)) {
+            $data['icon'] = $previousIcon;
         }
 
         $socials = $this->socials();
@@ -87,6 +91,10 @@ class SocialController extends Controller
         }
         $this->save($socials);
 
+        if (filled($previousIcon) && ($data['icon'] ?? null) !== $previousIcon) {
+            $this->deleteIcon($previousIcon);
+        }
+
         return redirect()->route('admin.socials.index')
             ->with('success', __('admin.socials.updated'));
     }
@@ -97,14 +105,36 @@ class SocialController extends Controller
     public function destroy(string $social)
     {
         $socials = $this->socials();
+        $removed = array_values(array_filter(
+            $socials,
+            fn (array $item): bool => ($item['id'] ?? null) === $social
+        ));
         $socials = array_values(array_filter(
             $socials,
             fn (array $item): bool => ($item['id'] ?? null) !== $social
         ));
         $this->save($socials);
 
+        foreach ($removed as $item) {
+            if (filled($item['icon'] ?? null)) {
+                $this->deleteIcon($item['icon']);
+            }
+        }
+
         return redirect()->route('admin.socials.index')
             ->with('success', __('admin.socials.deleted'));
+    }
+
+    /**
+     * Delete an uploaded icon image from the public disk.
+     */
+    private function deleteIcon(string $icon): void
+    {
+        if (str_starts_with($icon, 'http')) {
+            return;
+        }
+
+        Storage::disk('public')->delete($icon);
     }
 
     /**
