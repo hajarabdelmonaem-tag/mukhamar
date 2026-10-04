@@ -37,7 +37,7 @@
                 <input type="number" name="sort_order" value="{{ old('sort_order', 0) }}" class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30" />
             </div>
             <div>
-                <x-form.image-upload :label="__('admin.socials.icon')" />
+                <x-form.image-upload name="icon" :label="__('admin.socials.icon')" />
             </div>
             <div class="flex items-center gap-3 sm:col-span-2">
                 <label class="flex cursor-pointer items-center gap-3">

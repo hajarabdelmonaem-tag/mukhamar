@@ -52,6 +52,25 @@ it('returns the social link names in the requested locale', function (): void {
         ->assertJsonPath('data.0.name', 'فيسبوك');
 });
 
+it('uploads the icon through a file input named icon', function (): void {
+    $admin = User::factory()->create(['is_admin' => true, 'is_active' => true]);
+
+    $this->actingAs($admin)
+        ->get(route('admin.socials.create'))
+        ->assertOk()
+        ->assertSee('name="icon"', false)
+        ->assertSee('type="file"', false);
+
+    Setting::query()->create(['key' => 'socials', 'value' => [
+        ['id' => 'social-1', 'name' => ['en' => 'Facebook', 'ar' => 'فيسبوك'], 'icon' => 'socials/facebook.png', 'link' => 'https://facebook.com/mukhamar'],
+    ]]);
+
+    $this->actingAs($admin)
+        ->get(route('admin.socials.edit', 'social-1'))
+        ->assertOk()
+        ->assertSee('name="icon"', false);
+});
+
 it('stores the uploaded icon and returns its complete path', function (): void {
     Storage::fake('public');
     $admin = User::factory()->create(['is_admin' => true, 'is_active' => true]);
