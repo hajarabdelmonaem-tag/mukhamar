@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\V1;
 
+use App\Helpers\MediaHelper;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -16,8 +17,8 @@ class ProductImageResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'path' => $this->path,
-            'url' => $this->path ? asset('storage/'.$this->path) : null,
+            'path' => MediaHelper::toUrl($this->path),
+            'url' => MediaHelper::toUrl($this->path),
             'alt' => $this->alt,
             'is_primary' => $this->is_primary,
             'sort_order' => $this->sort_order,

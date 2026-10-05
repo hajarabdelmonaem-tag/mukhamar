@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\V1;
 
+use App\Helpers\MediaHelper;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -21,7 +22,7 @@ class UserResource extends JsonResource
             'email_verified_at' => $this->email_verified_at?->toISOString(),
             'phone' => $this->phone,
             'phone_verified_at' => $this->phone_verified_at?->toISOString(),
-            'avatar' => $this->avatar,
+            'avatar' => MediaHelper::toUrl($this->avatar),
             'lang' => $this->lang,
             'is_active' => $this->is_active,
             'created_at' => $this->created_at?->toISOString(),

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Helpers\MediaHelper;
 use Database\Factories\BannerFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -26,11 +27,7 @@ class Banner extends Model
      */
     public function getImageUrlAttribute(): ?string
     {
-        if (blank($this->image)) {
-            return null;
-        }
-
-        return str_starts_with($this->image, 'http') ? $this->image : asset('storage/'.$this->image);
+        return MediaHelper::toUrl($this->image);
     }
 
     /**

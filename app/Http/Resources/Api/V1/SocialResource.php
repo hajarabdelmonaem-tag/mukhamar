@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\V1;
 
+use App\Helpers\MediaHelper;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -26,13 +27,7 @@ class SocialResource extends JsonResource
      */
     private function iconUrl(): ?string
     {
-        $icon = $this->resource['icon'] ?? null;
-
-        if (blank($icon)) {
-            return null;
-        }
-
-        return str_starts_with($icon, 'http') ? $icon : asset('storage/'.$icon);
+        return MediaHelper::toUrl($this->resource['icon'] ?? null);
     }
 
     /**

@@ -3,8 +3,10 @@
 use App\Models\Address;
 use App\Models\Category;
 use App\Models\Coupon;
+use App\Models\Intro;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\ProductImage;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -64,6 +66,60 @@ it('returns only products with the bestseller badge in home best sellers', funct
     $response->assertOk()
         ->assertJsonCount(1, 'data.best_sellers')
         ->assertJsonPath('data.best_sellers.0.id', $bestSeller->id);
+});
+
+it('returns the full intro image url', function (): void {
+    Intro::create([
+        'title' => ['en' => 'Free shipping', 'ar' => 'شحن مجاني'],
+        'image' => 'intros/shipping.jpg',
+        'is_active' => true,
+    ]);
+
+    $this->getJson('/api/v1/intros')
+        ->assertOk()
+        ->assertJsonPath('data.0.image', asset('storage/intros/shipping.jpg'));
+});
+
+it('returns a null intro image when none is set', function (): void {
+    Intro::create([
+        'title' => ['en' => 'Free shipping', 'ar' => 'شحن مجاني'],
+        'image' => null,
+        'is_active' => true,
+    ]);
+
+    $this->getJson('/api/v1/intros')
+        ->assertOk()
+        ->assertJsonPath('data.0.image', null);
+});
+
+it('returns the full category image url', function (): void {
+    $category = Category::factory()->create(['image' => 'categories/women.jpg']);
+
+    $response = $this->getJson('/api/v1/categories')->assertOk();
+
+    $position = collect($response->json('data'))->search(fn (array $item): bool => $item['id'] === $category->id);
+
+    $response->assertJsonPath("data.$position.image", asset('storage/categories/women.jpg'));
+});
+
+it('returns a null category image when none is set', function (): void {
+    $category = Category::factory()->create(['image' => null]);
+
+    $response = $this->getJson('/api/v1/categories')->assertOk();
+
+    $position = collect($response->json('data'))->search(fn (array $item): bool => $item['id'] === $category->id);
+
+    $response->assertJsonPath("data.$position.image", null);
+});
+
+it('returns the full product image url', function (): void {
+    ProductImage::factory()->for($this->product)->primary()->create(['path' => 'products/oud.jpg']);
+
+    $this->getJson('/api/v1/products?category='.$this->product->category_id)
+        ->assertOk()
+        ->assertJsonPath('data.0.images.0.path', asset('storage/products/oud.jpg'))
+        ->assertJsonPath('data.0.images.0.url', asset('storage/products/oud.jpg'))
+        ->assertJsonPath('data.0.primary_image.url', asset('storage/products/oud.jpg'));
 });
 
 it('lists products with pagination metadata', function (): void {
@@ -217,6 +273,30 @@ it('updates the profile language and returns a localized message', function (): 
         ->assertJsonPath('user.lang', 'ar');
 
     $this->assertDatabaseHas('users', ['id' => $this->user->id, 'lang' => 'ar']);
+});
+
+it('returns the full avatar url in the profile resource', function (): void {
+    $this->user->update(['avatar' => 'avatars/avatar.jpg']);
+
+    $this->getJson('/api/v1/profile')
+        ->assertOk()
+        ->assertJsonPath('user.avatar', asset('storage/avatars/avatar.jpg'));
+});
+
+it('keeps an already absolute avatar url untouched', function (): void {
+    $this->user->update(['avatar' => 'https://cdn.example.com/avatar.jpg']);
+
+    $this->getJson('/api/v1/profile')
+        ->assertOk()
+        ->assertJsonPath('user.avatar', 'https://cdn.example.com/avatar.jpg');
+});
+
+it('returns a null avatar when the user has none', function (): void {
+    $this->user->update(['avatar' => null]);
+
+    $this->getJson('/api/v1/profile')
+        ->assertOk()
+        ->assertJsonPath('user.avatar', null);
 });
 
 it('honors the lang header for messages on any endpoint', function (): void {

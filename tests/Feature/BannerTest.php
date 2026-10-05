@@ -28,8 +28,23 @@ it('returns the banner image with a complete url', function (): void {
 
     $this->getJson('/api/v1/home')
         ->assertOk()
-        ->assertJsonPath('data.banners.0.image', 'banners/promo.jpg')
-        ->assertJsonPath('data.banners.0.image_url', asset('storage/banners/promo.jpg'));
+        ->assertJsonPath('data.banners.0.image', asset('storage/banners/promo.jpg'));
+});
+
+it('keeps an absolute banner image url untouched', function (): void {
+    Banner::factory()->create(['image' => 'https://cdn.mukhamar.com/promo.jpg']);
+
+    $this->getJson('/api/v1/home')
+        ->assertOk()
+        ->assertJsonPath('data.banners.0.image', 'https://cdn.mukhamar.com/promo.jpg');
+});
+
+it('returns a null banner image when none is set', function (): void {
+    Banner::factory()->create(['image' => null]);
+
+    $this->getJson('/api/v1/home')
+        ->assertOk()
+        ->assertJsonPath('data.banners.0.image', null);
 });
 
 it('stores banner titles and descriptions in both locales', function (): void {
