@@ -9,6 +9,9 @@ use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
@@ -297,6 +300,86 @@ it('returns a null avatar when the user has none', function (): void {
     $this->getJson('/api/v1/profile')
         ->assertOk()
         ->assertJsonPath('user.avatar', null);
+});
+
+it('stores an uploaded avatar and returns its full url when registering', function (): void {
+    Storage::fake('public');
+
+    $response = $this->post('/api/v1/auth/register', [
+        'name' => 'سارة أحمد',
+        'email' => 'sara.avatar@example.com',
+        'phone' => '+966 50 555 7777',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+        'accept_terms' => true,
+        'avatar' => UploadedFile::fake()->create('avatar.jpg', 100, 'image/jpeg'),
+    ]);
+
+    $response->assertCreated();
+
+    $avatar = $response->json('user.avatar');
+
+    Storage::disk('public')->assertExists(Str::after($avatar, 'storage/'));
+    $this->assertStringStartsWith(asset('storage/avatars/'), $avatar);
+
+    $this->assertDatabaseHas('users', ['email' => 'sara.avatar@example.com']);
+});
+
+it('rejects a register avatar that is not an image', function (): void {
+    Storage::fake('public');
+
+    $this->post('/api/v1/auth/register', [
+        'name' => 'سارة أحمد',
+        'email' => 'sara.notimage@example.com',
+        'phone' => '+966 50 555 8888',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+        'accept_terms' => true,
+        'avatar' => UploadedFile::fake()->create('avatar.txt', 10, 'text/plain'),
+    ])->assertStatus(422)->assertJsonValidationErrors('avatar');
+
+    $this->assertDatabaseMissing('users', ['email' => 'sara.notimage@example.com']);
+});
+
+it('returns a null avatar when registering without one', function (): void {
+    $this->postJson('/api/v1/auth/register', [
+        'name' => 'سارة أحمد',
+        'email' => 'sara.noavatar@example.com',
+        'phone' => '+966 50 555 9999',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+        'accept_terms' => true,
+    ])->assertCreated()
+        ->assertJsonPath('user.avatar', null);
+});
+
+it('stores an uploaded avatar and returns its full url when updating the profile', function (): void {
+    Storage::fake('public');
+
+    $response = $this->put('/api/v1/profile', [
+        'name' => 'سارة',
+        'avatar' => UploadedFile::fake()->create('avatar.jpg', 100, 'image/jpeg'),
+    ]);
+
+    $response->assertOk();
+
+    $avatar = $response->json('user.avatar');
+
+    Storage::disk('public')->assertExists(Str::after($avatar, 'storage/'));
+    $this->assertStringStartsWith(asset('storage/avatars/'), $avatar);
+    $this->assertDatabaseHas('users', ['id' => $this->user->id]);
+});
+
+it('deletes the previous avatar when a new one is uploaded', function (): void {
+    Storage::fake('public');
+    $this->user->update(['avatar' => 'avatars/old-avatar.jpg']);
+    Storage::disk('public')->put('avatars/old-avatar.jpg', 'old');
+
+    $this->put('/api/v1/profile', [
+        'avatar' => UploadedFile::fake()->create('avatar.jpg', 100, 'image/jpeg'),
+    ])->assertOk();
+
+    Storage::disk('public')->assertMissing('avatars/old-avatar.jpg');
 });
 
 it('honors the lang header for messages on any endpoint', function (): void {

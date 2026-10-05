@@ -22,7 +22,13 @@ class AuthController extends Controller
      */
     public function register(RegisterRequest $request): JsonResponse
     {
-        $user = User::query()->create($request->validated());
+        $user = User::query()->create($request->safe()->except('avatar'));
+
+        if ($request->hasFile('avatar')) {
+            $user->update([
+                'avatar' => $request->file('avatar')->store('avatars', 'public'),
+            ]);
+        }
 
         $code = str_pad((string) mt_rand(0, 9999), 4, '0', STR_PAD_LEFT);
         $user->update(['phone_confirmation_code' => $code]);
@@ -32,7 +38,7 @@ class AuthController extends Controller
         return response()->json([
             'message' => __('api.auth.registered'),
             'token' => $token,
-            'user' => new UserResource($user),
+            'user' => new UserResource($user->fresh()),
             'debug_phone_code' => $code,
         ], 201);
     }
