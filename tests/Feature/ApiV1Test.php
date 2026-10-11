@@ -230,6 +230,7 @@ it('places an order from the cart', function (): void {
 
     $response->assertCreated()
         ->assertJsonStructure(['data' => ['order_no', 'items', 'total']])
+        ->assertJsonStructure(['data' => ['items' => ['*' => ['product' => ['id', 'name', 'category', 'images', 'variants']]]]])
         ->assertJsonPath('data.items.0.product.id', $this->product->id)
         ->assertJsonPath('data.items.0.product.name', 'عطر اختبار');
 

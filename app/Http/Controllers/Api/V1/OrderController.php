@@ -26,7 +26,7 @@ class OrderController extends Controller
     {
         $orders = $request->user()
             ->orders()
-            ->with(['items.product', 'address'])
+            ->with(['items.product.category', 'items.product.images', 'items.product.variants', 'items.variant', 'address'])
             ->when($request->status, fn ($query, $status) => $query->where('status', $status))
             ->latest()
             ->paginate($request->integer('per_page', 10));
@@ -113,7 +113,7 @@ class OrderController extends Controller
             $cart->items()->delete();
             $cart->update(['coupon_id' => null]);
 
-            return $order->load(['items.product', 'address']);
+            return $order->load(['items.product.category', 'items.product.images', 'items.product.variants', 'items.variant', 'address']);
         });
 
         return response()->json([
@@ -129,7 +129,7 @@ class OrderController extends Controller
     {
         $this->authorizeOrder($request, $order);
 
-        $order->load(['items.product', 'items.variant', 'address']);
+        $order->load(['items.product.category', 'items.product.images', 'items.product.variants', 'items.variant', 'address']);
 
         return response()->json([
             'data' => new OrderResource($order),
@@ -143,7 +143,7 @@ class OrderController extends Controller
     {
         $this->authorizeOrder($request, $order);
 
-        $order->load(['items.product', 'address', 'user']);
+        $order->load(['items.product.category', 'items.product.images', 'items.product.variants', 'items.variant', 'address', 'user']);
 
         return response()->json([
             'data' => [
