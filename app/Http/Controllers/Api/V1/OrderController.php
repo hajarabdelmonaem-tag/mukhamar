@@ -26,7 +26,7 @@ class OrderController extends Controller
     {
         $orders = $request->user()
             ->orders()
-            ->with(['items', 'address'])
+            ->with(['items.product', 'address'])
             ->when($request->status, fn ($query, $status) => $query->where('status', $status))
             ->latest()
             ->paginate($request->integer('per_page', 10));
@@ -113,7 +113,7 @@ class OrderController extends Controller
             $cart->items()->delete();
             $cart->update(['coupon_id' => null]);
 
-            return $order->load(['items', 'address']);
+            return $order->load(['items.product', 'address']);
         });
 
         return response()->json([
@@ -143,7 +143,7 @@ class OrderController extends Controller
     {
         $this->authorizeOrder($request, $order);
 
-        $order->load(['items', 'address', 'user']);
+        $order->load(['items.product', 'address', 'user']);
 
         return response()->json([
             'data' => [
