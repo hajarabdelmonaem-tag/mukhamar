@@ -75,6 +75,7 @@
                             @php
                                 $colors = [
                                     'pending' => 'bg-warning-50 text-warning-600 dark:bg-warning-500/20 dark:text-warning-400',
+                                    'confirmed' => 'bg-blue-light-50 text-blue-light-600 dark:bg-blue-light-500/20 dark:text-blue-light-400',
                                     'processing' => 'bg-blue-light-50 text-blue-light-600 dark:bg-blue-light-500/20 dark:text-blue-light-400',
                                     'in_transit' => 'bg-brand-50 text-brand-600 dark:bg-brand-500/20 dark:text-brand-400',
                                     'delivered' => 'bg-success-50 text-success-600 dark:bg-success-500/20 dark:text-success-400',

@@ -57,6 +57,7 @@ return [
         'unread' => 'Unread',
         'all' => 'All',
         'pending' => 'Pending',
+        'confirmed' => 'Confirmed',
         'processing' => 'Processing',
         'in_transit' => 'In Transit',
         'delivered' => 'Delivered',

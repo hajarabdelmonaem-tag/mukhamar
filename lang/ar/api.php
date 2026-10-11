@@ -35,6 +35,7 @@ return [
         'created' => 'تم إنشاء طلبك بنجاح.',
         'status' => [
             'pending' => 'قيد الانتظار',
+            'confirmed' => 'مؤكد',
             'processing' => 'قيد التجهيز',
             'in_transit' => 'جاري التوصيل',
             'delivered' => 'تم التسليم',

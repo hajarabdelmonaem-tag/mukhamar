@@ -28,10 +28,10 @@ class OrderResource extends JsonResource
             'tax' => (float) $this->tax,
             'total' => (float) $this->total,
             'notes' => $this->notes,
-            'placed_at' => $this->placed_at?->toISOString(),
-            'confirmed_at' => $this->confirmed_at?->toISOString(),
-            'shipped_at' => $this->shipped_at?->toISOString(),
-            'delivered_at' => $this->delivered_at?->toISOString(),
+            'placed_at' => $this->placed_at?->format('Y-m-d H:i:s'),
+            'confirmed_at' => $this->confirmed_at?->format('Y-m-d H:i:s'),
+            'shipped_at' => $this->shipped_at?->format('Y-m-d H:i:s'),
+            'delivered_at' => $this->delivered_at?->format('Y-m-d H:i:s'),
             'timeline' => $this->timeline(),
             'items' => OrderItemResource::collection($this->whenLoaded('items')),
             'address' => new AddressResource($this->whenLoaded('address')),
@@ -45,6 +45,7 @@ class OrderResource extends JsonResource
     {
         return match ($this->status) {
             'pending' => __('api.order.status.pending'),
+            'confirmed' => __('api.order.status.confirmed'),
             'processing' => __('api.order.status.processing'),
             'in_transit' => __('api.order.status.in_transit'),
             'delivered' => __('api.order.status.delivered'),
@@ -78,17 +79,17 @@ class OrderResource extends JsonResource
             [
                 'key' => 'confirmed',
                 'label' => __('api.order.timeline.confirmed'),
-                'timestamp' => $this->confirmed_at?->toISOString(),
+                'timestamp' => $this->confirmed_at?->format('Y-m-d H:i:s'),
             ],
             [
                 'key' => 'in_transit',
                 'label' => __('api.order.timeline.in_transit'),
-                'timestamp' => $this->shipped_at?->toISOString(),
+                'timestamp' => $this->shipped_at?->format('Y-m-d H:i:s'),
             ],
             [
                 'key' => 'delivered',
                 'label' => __('api.order.timeline.delivered'),
-                'timestamp' => $this->delivered_at?->toISOString(),
+                'timestamp' => $this->delivered_at?->format('Y-m-d H:i:s'),
             ],
         ];
     }

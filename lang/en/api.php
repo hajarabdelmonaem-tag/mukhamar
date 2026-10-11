@@ -35,6 +35,7 @@ return [
         'created' => 'Your order has been placed successfully.',
         'status' => [
             'pending' => 'Pending',
+            'confirmed' => 'Confirmed',
             'processing' => 'Processing',
             'in_transit' => 'In Transit',
             'delivered' => 'Delivered',

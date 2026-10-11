@@ -20,7 +20,7 @@
         <label class="text-sm font-medium text-gray-700 dark:text-gray-400">{{ __('admin.table.status') }}</label>
         <select name="status" onchange="this.form.submit()" class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 focus:border-brand-300 focus:ring-3 focus:ring-brand-500/10 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
             <option value="">{{ __('admin.status.all_statuses') }}</option>
-            @foreach(['pending', 'processing', 'in_transit', 'delivered', 'cancelled'] as $status)
+            @foreach(['pending', 'confirmed', 'processing', 'in_transit', 'delivered', 'cancelled'] as $status)
                 <option value="{{ $status }}" {{ $currentStatus === $status ? 'selected' : '' }}>{{ __('admin.status.'.$status) }}</option>
             @endforeach
         </select>
@@ -65,6 +65,7 @@
                         <td class="px-6 py-4">
                             <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium
                                 @if($order->status === 'pending') bg-warning-50 text-warning-600 dark:bg-warning-500/20 dark:text-warning-400
+                                @elseif($order->status === 'confirmed') bg-blue-light-50 text-blue-light-600 dark:bg-blue-light-500/20 dark:text-blue-light-400
                                 @elseif($order->status === 'processing') bg-brand-50 text-brand-600 dark:bg-brand-500/20 dark:text-brand-400
                                 @elseif($order->status === 'in_transit') bg-brand-50 text-brand-600 dark:bg-brand-500/20 dark:text-brand-400
                                 @elseif($order->status === 'delivered') bg-success-50 text-success-600 dark:bg-success-500/20 dark:text-success-400

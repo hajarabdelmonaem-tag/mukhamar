@@ -22,6 +22,8 @@ class Order extends Model
 
     const STATUS_PENDING = 'pending';
 
+    const STATUS_CONFIRMED = 'confirmed';
+
     const STATUS_PROCESSING = 'processing';
 
     const STATUS_IN_TRANSIT = 'in_transit';

@@ -57,6 +57,7 @@ return [
         'unread' => 'غير مقروء',
         'all' => 'الكل',
         'pending' => 'قيد الانتظار',
+        'confirmed' => 'مؤكد',
         'processing' => 'قيد التجهيز',
         'in_transit' => 'جاري التوصيل',
         'delivered' => 'تم التسليم',

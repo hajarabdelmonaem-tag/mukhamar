@@ -42,11 +42,27 @@ class OrderController extends Controller
      */
     public function updateStatus(Order $order)
     {
-        request()->validate([
-            'status' => ['required', 'in:pending,processing,in_transit,delivered,cancelled'],
+        $validated = request()->validate([
+            'status' => ['required', 'in:pending,confirmed,processing,in_transit,delivered,cancelled'],
         ]);
 
-        $order->update(['status' => request('status')]);
+        $status = $validated['status'];
+
+        $timestampColumn = match ($status) {
+            Order::STATUS_CONFIRMED => 'confirmed_at',
+            Order::STATUS_IN_TRANSIT => 'shipped_at',
+            Order::STATUS_DELIVERED => 'delivered_at',
+            Order::STATUS_CANCELLED => 'cancelled_at',
+            default => null,
+        };
+
+        $attributes = ['status' => $status];
+
+        if ($timestampColumn !== null && $order->{$timestampColumn} === null) {
+            $attributes[$timestampColumn] = now();
+        }
+
+        $order->update($attributes);
 
         return back()->with('success', __('admin.orders.status_updated'));
     }
