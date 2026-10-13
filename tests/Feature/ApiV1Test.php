@@ -49,6 +49,12 @@ it('logs a user in using email', function (): void {
     $response->assertOk()->assertJsonStructure(['token', 'user']);
 });
 
+it('returns a json 401 for unauthenticated api requests', function (): void {
+    auth('sanctum')->forgetUser();
+
+    $this->post('/api/v1/order-enquiry')->assertUnauthorized();
+});
+
 it('returns home screen data', function (): void {
     Category::factory()->create(['name' => ['en' => 'Women Perfumes', 'ar' => 'عطور نسائية']]);
     $this->product->update(['is_featured' => true]);
@@ -152,6 +158,26 @@ it('adds an item to the cart and returns a summary', function (): void {
     $this->assertDatabaseHas('cart_items', [
         'product_id' => $this->product->id,
         'quantity' => 2,
+    ]);
+});
+
+it('accumulates quantity when the same product is added again', function (): void {
+    $this->postJson('/api/v1/cart/items', [
+        'product_id' => $this->product->id,
+        'quantity' => 2,
+    ])->assertOk();
+
+    $response = $this->postJson('/api/v1/cart/items', [
+        'product_id' => $this->product->id,
+        'quantity' => 3,
+    ]);
+
+    $response->assertOk();
+
+    $this->assertDatabaseCount('cart_items', 1);
+    $this->assertDatabaseHas('cart_items', [
+        'product_id' => $this->product->id,
+        'quantity' => 5,
     ]);
 });
 

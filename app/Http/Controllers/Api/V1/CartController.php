@@ -41,15 +41,13 @@ class CartController extends Controller
             ->where('is_active', true)
             ->first();
 
-        $item = $cart->items()->updateOrCreate(
-            [
-                'product_id' => $request->product_id,
-                'product_variant_id' => $variant?->id,
-            ],
-            [
-                'quantity' => $request->quantity,
-            ]
-        );
+        $item = $cart->items()->firstOrNew([
+            'product_id' => $request->product_id,
+            'product_variant_id' => $variant?->id,
+        ]);
+
+        $item->quantity = ($item->quantity ?? 0) + $request->quantity;
+        $item->save();
 
         return $this->cartResponse($cart, __('api.cart.item_added'));
     }
