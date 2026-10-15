@@ -42,6 +42,29 @@
             this.isDragging = false;
             this.addFiles(e.dataTransfer.files);
         },
+        submitForm(el) {
+            if (el.dataset.confirm && ! window.confirm(el.dataset.confirm)) {
+                return;
+            }
+
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = el.dataset.action;
+
+            const token = document.createElement('input');
+            token.type = 'hidden';
+            token.name = '_token';
+            token.value = document.querySelector('meta[name=csrf-token]')?.content ?? '';
+
+            const method = document.createElement('input');
+            method.type = 'hidden';
+            method.name = '_method';
+            method.value = el.dataset.method;
+
+            form.append(token, method);
+            document.body.appendChild(form);
+            form.submit();
+        },
     }"
 >
     @if ($label)
@@ -57,19 +80,11 @@
                         @if ($image['is_primary'])
                             <span class="inline-flex items-center rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-600 dark:bg-brand-500/20 dark:text-brand-400">{{ __('admin.products.primary') }}</span>
                         @else
-                            <form method="POST" action="{{ $image['primary_url'] }}">
-                                @csrf
-                                @method('PUT')
-                                <button type="submit" class="inline-flex items-center rounded-lg px-2 py-1 text-xs font-medium text-gray-500 transition hover:bg-brand-50 hover:text-brand-500 dark:text-gray-400 dark:hover:bg-brand-500/10">{{ __('admin.products.set_primary') }}</button>
-                            </form>
+                            <button type="button" data-action="{{ $image['primary_url'] }}" data-method="PUT" @click="submitForm($el)" class="inline-flex items-center rounded-lg px-2 py-1 text-xs font-medium text-gray-500 transition hover:bg-brand-50 hover:text-brand-500 dark:text-gray-400 dark:hover:bg-brand-500/10">{{ __('admin.products.set_primary') }}</button>
                         @endif
-                        <form method="POST" action="{{ $image['delete_url'] }}" onsubmit="return confirm('{{ __('admin.confirm.are_you_sure') }}')">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="inline-flex items-center rounded-lg p-1 text-gray-500 transition hover:bg-error-50 hover:text-error-500 dark:text-gray-400 dark:hover:bg-error-500/10">
-                                <svg class="fill-current" width="16" height="16" viewBox="0 0 24 24"><path d="M6 19a2 2 0 002 2h8a2 2 0 002-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="currentColor"/></svg>
-                            </button>
-                        </form>
+                        <button type="button" data-action="{{ $image['delete_url'] }}" data-method="DELETE" data-confirm="{{ __('admin.confirm.are_you_sure') }}" @click="submitForm($el)" class="inline-flex items-center rounded-lg p-1 text-gray-500 transition hover:bg-error-50 hover:text-error-500 dark:text-gray-400 dark:hover:bg-error-500/10">
+                            <svg class="fill-current" width="16" height="16" viewBox="0 0 24 24"><path d="M6 19a2 2 0 002 2h8a2 2 0 002-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="currentColor"/></svg>
+                        </button>
                     </div>
                 </div>
             @endforeach

@@ -4,6 +4,7 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Blade;
 
 uses(RefreshDatabase::class);
 
@@ -84,4 +85,26 @@ it('keeps the active alpine state in sync when the product is inactive', functio
 
     expect($html)->toContain('x-data="{ isActive: false }"')
         ->and($html)->not->toContain('name="is_active" value="1" checked');
+});
+
+it('renders existing image actions without nesting forms', function (): void {
+    $html = Blade::render(
+        '<x-form.image-gallery :existing="$images" />',
+        [
+            'images' => [
+                [
+                    'id' => 1,
+                    'src' => 'http://localhost/storage/products/one.jpg',
+                    'alt' => 'One',
+                    'is_primary' => false,
+                    'primary_url' => 'http://localhost/admin/products/images/1/primary',
+                    'delete_url' => 'http://localhost/admin/products/images/1',
+                ],
+            ],
+        ],
+    );
+
+    expect($html)->not->toContain('<form')
+        ->and($html)->toContain('data-method="PUT"')
+        ->and($html)->toContain('data-method="DELETE"');
 });
