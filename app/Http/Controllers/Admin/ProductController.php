@@ -134,7 +134,7 @@ class ProductController extends Controller
             'base_notes.ar' => ['nullable', 'string'],
             'badges' => ['nullable', 'array'],
             'images' => ['nullable', 'array'],
-            'images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
             'is_featured' => ['boolean'],
             'is_active' => ['boolean'],
             'variants' => ['nullable', 'array'],
