@@ -430,84 +430,94 @@ it('answers app name and terms of use questions in fake mode', function (): void
         ->toContain('Orders can be cancelled before shipping.');
 });
 
-it('builds page links in the notification path format', function (): void {
-    $tools = app(ChatbotToolsService::class);
+it('returns the tool key and the products in the products api format', function (): void {
+    $older = Product::factory()->create(['created_at' => now()->subDay()]);
+    $newest = Product::factory()->create(['slug' => 'newest-oud']);
+
+    $reply = $this->postJson('/api/v1/chat', ['message' => 'what are the newest perfumes?'])
+        ->assertOk()
+        ->assertJsonPath('data.reply.key', 'search_products')
+        ->assertJsonStructure(['data' => ['reply' => ['id', 'key', 'role', 'text', 'data' => ['*' => ['id', 'name', 'slug', 'price', 'images', 'primary_image', 'variants']], 'created_at']]])
+        ->json('data.reply');
+
+    expect(array_keys($reply))->toBe(['id', 'key', 'role', 'text', 'data', 'created_at'])
+        ->and(array_column($reply['data'], 'id'))->toBe([$newest->id, $older->id])
+        ->and($reply['data'][0]['slug'])->toBe('newest-oud');
+});
+
+it('returns only the customer orders as order data', function (): void {
     $customer = User::factory()->create();
-    $product = Product::factory()->create(['slug' => 'royal-oud']);
-    $order = Order::factory()->create(['user_id' => $customer->id, 'order_no' => 'MKR-1234']);
+    Order::factory()->create(['user_id' => $customer->id, 'order_no' => 'MKR-1111']);
+    Order::factory()->create(['order_no' => 'MKR-2222']);
+    $this->actingAs($customer, 'sanctum');
 
-    expect($tools->execute('get_page_link', ['page' => 'product', 'product_id' => $product->id], null)['url'])->toBe('/products/royal-oud')
-        ->and($tools->execute('get_page_link', ['page' => 'cart'], $customer)['url'])->toBe('/cart')
-        ->and($tools->execute('get_page_link', ['page' => 'order', 'order_no' => 'MKR-1234'], $customer)['url'])->toBe("/orders/{$order->id}")
-        ->and($tools->execute('get_page_link', ['page' => 'terms'], null)['url'])->toBe('/terms');
-
-    config(['services.chatbot.link_base' => 'mukhamar://']);
-
-    expect($tools->execute('get_page_link', ['page' => 'cart'], $customer)['url'])->toBe('mukhamar://cart')
-        ->and($tools->execute('get_page_link', ['page' => 'home'], null)['url'])->toBe('mukhamar://');
-
-    config(['services.chatbot.link_base' => 'https://mukhamar.com']);
-
-    expect($tools->execute('get_page_link', ['page' => 'cart'], $customer)['url'])->toBe('https://mukhamar.com/cart');
-});
-
-it('does not link to missing products or another customer order', function (): void {
-    $tools = app(ChatbotToolsService::class);
-    $order = Order::factory()->create();
-
-    expect($tools->execute('get_page_link', ['page' => 'product', 'product_id' => 999], null))->toHaveKey('error')
-        ->and($tools->execute('get_page_link', ['page' => 'order', 'order_no' => $order->order_no], User::factory()->create()))->toHaveKey('error');
-});
-
-it('offers a login link when a guest asks for a private page', function (): void {
-    $result = app(ChatbotToolsService::class)->execute('get_page_link', ['page' => 'wishlist'], null);
-
-    expect($result)->toHaveKey('error')
-        ->and($result['login_link']['url'])->toBe('/login');
-});
-
-it('returns page links with the reply and in the history', function (): void {
-    $this->actingAs(User::factory()->create(), 'sanctum');
-
-    $response = $this->postJson('/api/v1/chat', ['message' => 'وديني على السلة'])
+    $this->postJson('/api/v1/chat', ['message' => 'where is my order?'])
         ->assertOk()
-        ->assertJsonPath('data.reply.links', [['page' => 'cart', 'title' => 'سلة التسوق', 'label' => 'اضغط هنا', 'url' => '/cart']]);
-
-    expect($response->json('data.reply.text'))
-        ->toBe(trans('api.chatbot.fake.header', locale: 'ar')."\n\n".trans('api.chatbot.fake.page_link', ['title' => 'سلة التسوق'], 'ar'))
-        ->not->toContain('/cart');
-
-    $this->getJson('/api/v1/chat/'.$response->json('data.conversation_id'))
-        ->assertJsonPath('data.messages.1.links.0.url', '/cart')
-        ->assertJsonPath('data.messages.0.links', []);
+        ->assertJsonPath('data.reply.key', 'get_my_orders')
+        ->assertJsonCount(1, 'data.reply.data')
+        ->assertJsonPath('data.reply.data.0.order_no', 'MKR-1111')
+        ->assertJsonStructure(['data' => ['reply' => ['data' => ['*' => ['status', 'status_label', 'total', 'items', 'timeline']]]]]);
 });
 
-it('gives a guest a login button when they ask for a private page', function (): void {
-    $this->postJson('/api/v1/chat', ['message' => 'take me to my wishlist'])
+it('marks wishlisted products in the reply data', function (): void {
+    $customer = User::factory()->create();
+    $wishlist = Wishlist::factory()->create(['user_id' => $customer->id]);
+    $this->actingAs($customer, 'sanctum');
+
+    $this->postJson('/api/v1/chat', ['message' => 'show my wishlist'])
         ->assertOk()
-        ->assertJsonPath('data.reply.links', [['page' => 'login', 'title' => 'the login page', 'label' => 'Click here', 'url' => '/login']]);
+        ->assertJsonPath('data.reply.key', 'get_my_wishlist')
+        ->assertJsonPath('data.reply.data.0.id', $wishlist->product_id)
+        ->assertJsonPath('data.reply.data.0.is_wishlisted', true);
 });
 
-it('shows link buttons in the admin transcript', function (): void {
-    $admin = User::factory()->create(['is_admin' => true, 'is_active' => true]);
-    $conversation = ChatConversation::factory()->create();
-    ChatMessage::factory()->for($conversation, 'conversation')->assistant()->create([
-        'text' => 'اضغط على الزر بالأسفل',
-        'links' => [['page' => 'cart', 'title' => 'سلة التسوق', 'label' => 'اضغط هنا', 'url' => '/cart']],
+it('returns the key with empty data when a tool has nothing to show', function (): void {
+    $this->postJson('/api/v1/chat', ['message' => 'where is my order?'])
+        ->assertOk()
+        ->assertJsonPath('data.reply.key', 'get_my_orders')
+        ->assertJsonPath('data.reply.data', []);
+});
+
+it('returns no key and no data when no tool was used', function (): void {
+    $this->postJson('/api/v1/chat', ['message' => 'hello'])
+        ->assertOk()
+        ->assertJsonPath('data.reply.key', null)
+        ->assertJsonPath('data.reply.data', []);
+});
+
+it('returns single-answer tools as one object in data', function (): void {
+    $this->postJson('/api/v1/chat', ['message' => 'how much is shipping?'])
+        ->assertOk()
+        ->assertJsonPath('data.reply.key', 'get_store_info')
+        ->assertJsonCount(1, 'data.reply.data')
+        ->assertJsonStructure(['data' => ['reply' => ['data' => ['*' => ['currency', 'tax_rate_percent', 'shipping_fee', 'free_shipping_threshold', 'payment_methods']]]]]);
+});
+
+it('uses the last tool the model called as the key', function (): void {
+    $product = Product::factory()->create();
+    scriptChatbot([
+        toolTurn('get_store_info'),
+        toolTurn('search_products', ['limit' => 1]),
+        textTurn('Here you go.'),
     ]);
 
-    $this->actingAs($admin)->get(route('admin.chat-conversations.show', $conversation))
+    $this->postJson('/api/v1/chat', ['message' => 'Hi'])
         ->assertOk()
-        ->assertSee('href="/cart"', false)
-        ->assertSee('اضغط هنا');
+        ->assertJsonPath('data.reply.key', 'search_products')
+        ->assertJsonPath('data.reply.data.0.id', $product->id);
 });
 
-it('links to a product page by its number in fake mode', function (): void {
-    $product = Product::factory()->create(['slug' => 'royal-oud']);
+it('keeps the key and data in the conversation history', function (): void {
+    Product::factory()->create();
 
-    $this->postJson('/api/v1/chat', ['message' => "open product {$product->id}"])
+    $conversationId = $this->postJson('/api/v1/chat', ['message' => 'recommend a perfume'])->json('data.conversation_id');
+
+    $this->getJson("/api/v1/chat/{$conversationId}")
         ->assertOk()
-        ->assertJsonPath('data.reply.links.0.url', '/products/royal-oud');
+        ->assertJsonPath('data.messages.0.key', null)
+        ->assertJsonPath('data.messages.0.data', [])
+        ->assertJsonPath('data.messages.1.key', 'search_products')
+        ->assertJsonCount(1, 'data.messages.1.data');
 });
 
 it('sends a support message for a logged-in customer', function (): void {
