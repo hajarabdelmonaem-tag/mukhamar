@@ -22,7 +22,7 @@ class FakeChatbotClient implements ChatbotClient
         '/مفضل|wishlist|favou?rite/iu' => ['get_my_wishlist', []],
         '/عنوان|عناوين|address/iu' => ['get_my_addresses', []],
         '/إشعار|اشعار|notification/iu' => ['get_my_notifications', []],
-        '/حسابي|بياناتي|ملفي|my account|profile/iu' => ['get_my_account', []],
+        '/(?:ال)?ملف (?:ال)?شخصي|ملفي|بروفايل|حسابي|بياناتي|(?:ال)?بيانات (?:ال)?شخصية|معلوماتي|my account|profile|personal (?:data|details|info)/iu' => ['profile', []],
         '/طلب|اوردر|أوردر|order/iu' => ['get_my_orders', []],
         '/سل[ةه]|cart/iu' => ['get_my_cart', []],
         '/شحن|توصيل|ضريب|دفع|shipping|delivery|tax|payment/iu' => ['get_store_info', []],
@@ -263,7 +263,7 @@ class FakeChatbotClient implements ChatbotClient
                     ->map(fn (array $notification): string => '• '.($notification['is_read'] ? '' : '('.__('api.chatbot.fake.new_mark').') ')."{$notification['title']}: {$notification['body']}")
                     ->all(),
             ]),
-            'get_my_account' => implode("\n", array_filter([
+            'profile' => implode("\n", array_filter([
                 __('api.chatbot.fake.account_name', ['name' => $data['name']]),
                 $data['email'] ? __('api.chatbot.fake.contact_email', ['email' => $data['email']]) : null,
                 $data['phone'] ? __('api.chatbot.fake.contact_phone', ['phone' => $data['phone']]) : null,

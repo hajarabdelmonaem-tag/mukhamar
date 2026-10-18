@@ -9,6 +9,7 @@ use App\Http\Resources\Api\V1\NotificationResource;
 use App\Http\Resources\Api\V1\OrderResource;
 use App\Http\Resources\Api\V1\ProductResource;
 use App\Http\Resources\Api\V1\ReviewResource;
+use App\Http\Resources\Api\V1\UserResource;
 use App\Models\Address;
 use App\Models\Banner;
 use App\Models\Cart;
@@ -203,8 +204,8 @@ class ChatbotToolsService
                 ],
             ],
             [
-                'name' => 'get_my_account',
-                'description' => "Get the logged-in customer's account details: name, email, phone, whether the phone is verified, app language, member since and number of orders.",
+                'name' => 'profile',
+                'description' => "Get the logged-in customer's profile (personal data): name, email, phone, whether the phone is verified, app language, member since, and how many orders, saved addresses and wishlist items they have. Use it for questions about their profile, account or personal details.",
                 'inputSchema' => ['type' => 'object', 'properties' => new \stdClass],
             ],
         ];
@@ -237,7 +238,7 @@ class ChatbotToolsService
             'get_my_wishlist' => $user ? $this->wishlist($user) : self::loginRequired(),
             'get_my_addresses' => $user ? $this->addresses($user) : self::loginRequired(),
             'get_my_notifications' => $user ? $this->notifications($user, $input) : self::loginRequired(),
-            'get_my_account' => $user ? $this->account($user) : self::loginRequired(),
+            'profile' => $user ? $this->account($user) : self::loginRequired(),
             default => ['error' => "Unknown tool: {$name}"],
         };
     }
@@ -276,6 +277,7 @@ class ChatbotToolsService
             'get_my_notifications' => NotificationResource::collection(
                 $user->customNotifications()->whereIn('id', array_column($result['notifications'], 'id'))->latest()->get()
             )->resolve(request()),
+            'profile' => $user ? [$this->profileResource($user)] : [],
             'get_product_reviews' => ReviewResource::collection(
                 ProductReview::query()->with('user')->whereIn('id', array_column($result['reviews'], 'id'))->latest()->get()
             )->resolve(request()),
@@ -551,6 +553,28 @@ class ChatbotToolsService
             'language' => $user->lang,
             'member_since' => $user->created_at?->format('Y-m-d'),
             'orders_count' => $user->orders()->count(),
+            'addresses_count' => $user->addresses()->count(),
+            'wishlist_count' => $user->wishlist()->count(),
+        ];
+    }
+
+    /**
+     * The customer's profile in the same shape as GET /api/v1/profile.
+     *
+     * @return array<string, mixed>
+     */
+    private function profileResource(User $user): array
+    {
+        $user->load('addresses');
+
+        return [
+            'user' => (new UserResource($user))->resolve(request()),
+            'stats' => [
+                'orders_count' => $user->orders()->count(),
+                'addresses_count' => $user->addresses->count(),
+                'wishlist_count' => $user->wishlist()->count(),
+            ],
+            'addresses' => AddressResource::collection($user->addresses)->resolve(request()),
         ];
     }
 
