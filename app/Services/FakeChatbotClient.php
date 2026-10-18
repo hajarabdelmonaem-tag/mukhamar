@@ -26,6 +26,7 @@ class FakeChatbotClient implements ChatbotClient
         '/طلب|اوردر|أوردر|order/iu' => ['get_my_orders', []],
         '/سل[ةه]|cart/iu' => ['get_my_cart', []],
         '/شحن|توصيل|ضريب|دفع|shipping|delivery|tax|payment/iu' => ['get_store_info', []],
+        '/اسم (?:ال)?(?:تطبيق|متجر|ابلكيشن|أبلكيشن)|عن (?:ال)?(?:تطبيق|متجر)|التطبيق ده|التطبيق دا|صيانة|app name|about (?:the |this |your )?(?:app|store)|what is this app|maintenance/iu' => ['get_app_info', []],
         '/خصوصي|privacy/iu' => ['get_policy', ['page' => 'privacy']],
         '/سياس|شروط|استرجاع|استبدال|terms|policy|return/iu' => ['get_policy', ['page' => 'terms']],
         '/قسم|اقسام|أقسام|categor/iu' => ['list_categories', []],
@@ -282,10 +283,23 @@ class FakeChatbotClient implements ChatbotClient
                 __('api.chatbot.fake.tax', ['rate' => $data['tax_rate_percent']]),
                 __('api.chatbot.fake.payment_methods', ['methods' => implode(__('api.chatbot.fake.separator'), $data['payment_methods'])]),
             ]),
-            'get_policy' => trim(($data['title'] ?? '')."\n\n".collect($data['sections'] ?? [])
-                ->map(fn (array $section): string => trim(($section['heading'] ?? '')."\n".Str::limit(strip_tags((string) ($section['body'] ?? '')), 200)))
-                ->take(3)
-                ->implode("\n\n")),
+            'get_policy' => $data['sections'] === []
+                ? __('api.chatbot.fake.not_found')
+                : trim(($data['title'] ?? '')."\n\n".collect($data['sections'])
+                    ->map(fn (array $section): string => trim(($section['heading'] ? "• {$section['heading']}" : '')."\n".Str::limit(strip_tags((string) ($section['body'] ?? '')), 500)))
+                    ->implode("\n\n")),
+            'get_app_info' => implode("\n", array_filter([
+                __('api.chatbot.fake.app_name', ['name' => $data['app_name']]),
+                $data['under_maintenance'] ? __('api.chatbot.fake.app_maintenance') : null,
+                $data['features'] !== [] ? "\n".__('api.chatbot.fake.app_features')."\n".collect($data['features'])
+                    ->map(fn (array $feature): string => '• '.trim($feature['title'].($feature['description'] ? ': '.Str::limit(strip_tags((string) $feature['description']), 120) : '')))
+                    ->implode("\n") : null,
+                "\n".__('api.chatbot.fake.app_languages'),
+                __('api.chatbot.fake.app_currency', ['currency' => $data['currency']]),
+                $data['support_email'] ? __('api.chatbot.fake.contact_email', ['email' => $data['support_email']]) : null,
+                $data['support_phone'] ? __('api.chatbot.fake.contact_phone', ['phone' => $data['support_phone']]) : null,
+                $data['legal_pages']['terms'] || $data['legal_pages']['privacy'] ? __('api.chatbot.fake.app_legal') : null,
+            ])),
             'get_my_orders' => $data['orders'] === []
                 ? __('api.chatbot.fake.no_orders')
                 : __('api.chatbot.fake.orders_intro')."\n".collect($data['orders'])

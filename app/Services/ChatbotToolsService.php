@@ -8,6 +8,7 @@ use App\Models\Cart;
 use App\Models\Category;
 use App\Models\ContactMessage;
 use App\Models\Coupon;
+use App\Models\Intro;
 use App\Models\Notification;
 use App\Models\Order;
 use App\Models\PaymentMethod;
@@ -77,14 +78,19 @@ class ChatbotToolsService
             ],
             [
                 'name' => 'get_policy',
-                'description' => 'Get the text of a store policy page.',
+                'description' => "Get the full text of one of the app's legal pages, as published by the store. Use it for questions about the terms of use, usage policy, terms and conditions, returns, cancellations or privacy. Quote or summarise only what the page says.",
                 'inputSchema' => [
                     'type' => 'object',
                     'properties' => [
-                        'page' => ['type' => 'string', 'enum' => ['terms', 'privacy'], 'description' => 'terms covers terms and conditions (including returns if the store lists them there); privacy is the privacy policy.'],
+                        'page' => ['type' => 'string', 'enum' => ['terms', 'privacy'], 'description' => 'terms is the terms and conditions / terms of use / usage policy (returns and cancellations are covered there if the store lists them); privacy is the privacy policy (what personal data is collected and how it is used).'],
                     ],
                     'required' => ['page'],
                 ],
+            ],
+            [
+                'name' => 'get_app_info',
+                'description' => 'Get general information about the app and store: its name, what the app offers (from its intro screens), supported languages, currency, support email and phone, whether it is under maintenance, and which legal pages are published.',
+                'inputSchema' => ['type' => 'object', 'properties' => new \stdClass],
             ],
             [
                 'name' => 'get_my_orders',
@@ -220,6 +226,7 @@ class ChatbotToolsService
             'check_coupon' => $this->checkCoupon((string) ($input['code'] ?? ''), $user),
             'get_product_reviews' => $this->productReviews((int) ($input['product_id'] ?? 0), $input),
             'get_contact_info' => $this->contactInfo(),
+            'get_app_info' => $this->appInfo(),
             'get_my_wishlist' => $user ? $this->wishlist($user) : self::loginRequired(),
             'get_my_addresses' => $user ? $this->addresses($user) : self::loginRequired(),
             'get_my_notifications' => $user ? $this->notifications($user, $input) : self::loginRequired(),
@@ -611,14 +618,54 @@ class ChatbotToolsService
             return ['error' => 'This page has not been published by the store.'];
         }
 
-        $localize = fn (array $value): ?string => $value[app()->getLocale()] ?? $value['en'] ?? $value['ar'] ?? null;
+        $localize = fn (mixed $value): ?string => is_array($value)
+            ? ($value[app()->getLocale()] ?? $value['en'] ?? $value['ar'] ?? null)
+            : (is_string($value) ? $value : null);
+
+        // Older settings stored the page as one body per language.
+        $sections = $document['sections'] ?? (isset($document['en']) || isset($document['ar']) ? [['body' => $document]] : []);
 
         return [
-            'title' => $localize($document['title'] ?? []),
-            'sections' => collect($document['sections'] ?? [])->map(fn (array $section): array => [
-                'heading' => $localize($section['heading'] ?? []),
-                'body' => $localize($section['body'] ?? []),
-            ])->values()->all(),
+            'page' => $page,
+            'title' => $localize($document['title'] ?? null),
+            'sections' => collect($sections)
+                ->map(fn (array $section): array => [
+                    'heading' => $localize($section['heading'] ?? null),
+                    'body' => $localize($section['body'] ?? null),
+                ])
+                ->filter(fn (array $section): bool => filled($section['heading']) || filled($section['body']))
+                ->values()
+                ->all(),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function appInfo(): array
+    {
+        $published = fn (string $key, string $legacyKey): bool => Setting::query()->whereIn('key', [$key, $legacyKey])->exists();
+
+        return [
+            'app_name' => $this->settings->get('site_name') ?: config('services.chatbot.store_name'),
+            'features' => Intro::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->get()
+                ->map(fn (Intro $intro): array => [
+                    'title' => $intro->title,
+                    'description' => $intro->description,
+                ])
+                ->all(),
+            'languages' => ['ar', 'en'],
+            'currency' => $this->settings->currency(),
+            'support_email' => $this->settings->get('site_email'),
+            'support_phone' => $this->settings->get('site_phone'),
+            'under_maintenance' => filter_var($this->settings->get('maintenance_mode', false), FILTER_VALIDATE_BOOLEAN),
+            'legal_pages' => [
+                'terms' => $published('terms_conditions', 'terms'),
+                'privacy' => $published('privacy_policy', 'policy'),
+            ],
         ];
     }
 
