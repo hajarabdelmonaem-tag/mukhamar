@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\ChatConversationController;
 use App\Http\Controllers\Admin\ContactMessageController;
 use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\DashboardController;
@@ -82,6 +83,11 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::get('contact-messages/{contactMessage}', [ContactMessageController::class, 'show'])->name('contact-messages.show');
         Route::put('contact-messages/{contactMessage}/read', [ContactMessageController::class, 'markAsRead'])->name('contact-messages.mark-read');
         Route::delete('contact-messages/{contactMessage}', [ContactMessageController::class, 'destroy'])->name('contact-messages.destroy');
+
+        // Chatbot conversations
+        Route::get('chat-conversations', [ChatConversationController::class, 'index'])->name('chat-conversations.index');
+        Route::get('chat-conversations/{conversation}', [ChatConversationController::class, 'show'])->name('chat-conversations.show');
+        Route::delete('chat-conversations/{conversation}', [ChatConversationController::class, 'destroy'])->name('chat-conversations.destroy');
 
         // Intros
         Route::resource('intros', IntroController::class)->except('show');

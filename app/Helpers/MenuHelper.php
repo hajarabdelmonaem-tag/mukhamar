@@ -69,6 +69,11 @@ class MenuHelper
                 'path' => '/admin/contact-messages',
             ],
             [
+                'icon' => 'ai-assistant',
+                'name' => __('admin.chat_conversations.title'),
+                'path' => '/admin/chat-conversations',
+            ],
+            [
                 'icon' => 'credit-card',
                 'name' => __('admin.payment_methods.title'),
                 'path' => '/admin/payment-methods',
