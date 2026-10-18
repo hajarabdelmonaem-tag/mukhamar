@@ -350,14 +350,14 @@ it('returns the logged-in customer account details', function (): void {
     $customer = User::factory()->create(['name' => 'Sara']);
     Order::factory()->count(2)->create(['user_id' => $customer->id]);
 
-    expect(app(ChatbotToolsService::class)->execute('get_my_account', [], $customer))
+    expect(app(ChatbotToolsService::class)->execute('profile', [], $customer))
         ->name->toBe('Sara')
         ->orders_count->toBe(2);
 });
 
 it('asks guests to log in for personal tools', function (string $tool): void {
     expect(app(ChatbotToolsService::class)->execute($tool, [], null))->toHaveKey('error');
-})->with(['get_my_wishlist', 'get_my_addresses', 'get_my_notifications', 'get_my_account']);
+})->with(['get_my_wishlist', 'get_my_addresses', 'get_my_notifications', 'profile']);
 
 it('routes coupon, offer and contact questions in fake mode', function (): void {
     Coupon::factory()->create(['code' => 'SAVE10', 'discount_type' => 'percentage', 'discount_value' => 10, 'min_subtotal' => null, 'max_uses' => null]);
@@ -476,6 +476,32 @@ it('returns the key with empty data when a tool has nothing to show', function (
         ->assertOk()
         ->assertJsonPath('data.reply.key', 'get_my_orders')
         ->assertJsonPath('data.reply.data', []);
+});
+
+it('returns the profile key with the same data as the profile api', function (string $message): void {
+    $customer = User::factory()->create(['name' => 'نورة', 'email' => 'noura@example.com']);
+    Order::factory()->count(2)->create(['user_id' => $customer->id]);
+    Address::factory()->create(['user_id' => $customer->id]);
+    $this->actingAs($customer, 'sanctum');
+
+    $reply = $this->postJson('/api/v1/chat', ['message' => $message])
+        ->assertOk()
+        ->assertJsonPath('data.reply.key', 'profile')
+        ->assertJsonCount(1, 'data.reply.data')
+        ->assertJsonPath('data.reply.data.0.user.email', 'noura@example.com')
+        ->assertJsonPath('data.reply.data.0.stats.orders_count', 2)
+        ->assertJsonCount(1, 'data.reply.data.0.addresses')
+        ->json('data.reply.data.0');
+
+    expect($reply)->toBe($this->getJson('/api/v1/profile')->json());
+})->with(['قولي بيانات الملف الشخصي', 'بياناتي الشخصية', 'show my profile', 'my personal details']);
+
+it('asks a guest to log in for their profile', function (): void {
+    $this->postJson('/api/v1/chat', ['message' => 'قولي بيانات الملف الشخصي'])
+        ->assertOk()
+        ->assertJsonPath('data.reply.key', 'profile')
+        ->assertJsonPath('data.reply.data', [])
+        ->assertJsonPath('data.reply.text', trans('api.chatbot.fake.header', locale: 'ar')."\n\n".trans('api.chatbot.fake.login_required', locale: 'ar'));
 });
 
 it('returns no key and no data when no tool was used', function (): void {
