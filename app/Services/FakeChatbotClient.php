@@ -19,13 +19,30 @@ class FakeChatbotClient implements ChatbotClient
      * @var array<string, array{0: string, 1: array<string, mixed>}>
      */
     private const ROUTES = [
+        '/مفضل|wishlist|favou?rite/iu' => ['get_my_wishlist', []],
+        '/عنوان|عناوين|address/iu' => ['get_my_addresses', []],
+        '/إشعار|اشعار|notification/iu' => ['get_my_notifications', []],
+        '/حسابي|بياناتي|ملفي|my account|profile/iu' => ['get_my_account', []],
         '/طلب|اوردر|أوردر|order/iu' => ['get_my_orders', []],
         '/سل[ةه]|cart/iu' => ['get_my_cart', []],
         '/شحن|توصيل|ضريب|دفع|shipping|delivery|tax|payment/iu' => ['get_store_info', []],
         '/خصوصي|privacy/iu' => ['get_policy', ['page' => 'privacy']],
         '/سياس|شروط|استرجاع|استبدال|terms|policy|return/iu' => ['get_policy', ['page' => 'terms']],
         '/قسم|اقسام|أقسام|categor/iu' => ['list_categories', []],
+        '/(?:الأ|الا|أ|ا)كثر مبيع|best ?sell|popular/iu' => ['get_best_sellers', []],
+        '/عروض|(?<![اأم])عرض|خصم|تخفيض|offer|sale|discount/iu' => ['get_current_offers', []],
+        '/تواصل|رقمكم|تليفون|تلفون|جوال|ايميل|إيميل|بريد|انستجرام|انستغرام|سوشيال|فيسبوك|تيك ?توك|contact|phone|email|instagram|social/iu' => ['get_contact_info', []],
     ];
+
+    /**
+     * Words that mean the customer is asking about a coupon code.
+     */
+    private const COUPON_PATTERN = '/كوبون|كود|coupon|promo|voucher/iu';
+
+    /**
+     * Words that mean the customer wants a product's reviews.
+     */
+    private const REVIEWS_PATTERN = '/تقييمات|آراء|اراء|ريفيو|reviews?/iu';
 
     /**
      * Product search sort orders recognised in a customer message.
@@ -99,6 +116,16 @@ class FakeChatbotClient implements ChatbotClient
      */
     private static function route(string $text): array
     {
+        if (preg_match(self::COUPON_PATTERN, $text)) {
+            $code = self::couponCode($text);
+
+            return $code ? ['check_coupon', ['code' => $code]] : ['get_current_offers', []];
+        }
+
+        if (preg_match(self::REVIEWS_PATTERN, $text) && preg_match('/\d+/', self::westernDigits($text), $match)) {
+            return ['get_product_reviews', ['product_id' => (int) $match[0]]];
+        }
+
         foreach (self::ROUTES as $pattern => $route) {
             if (preg_match($pattern, $text)) {
                 return $route;
@@ -116,7 +143,7 @@ class FakeChatbotClient implements ChatbotClient
      */
     private static function productSearchInput(string $text): array
     {
-        $text = strtr($text, ['٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4', '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9']);
+        $text = self::westernDigits($text);
         $input = ['limit' => 3];
 
         foreach (self::SORTS as $pattern => $sort) {
@@ -145,6 +172,27 @@ class FakeChatbotClient implements ChatbotClient
     }
 
     /**
+     * Find a coupon-looking token (letters and digits, with a digit or in
+     * capitals) in the message.
+     */
+    private static function couponCode(string $text): ?string
+    {
+        preg_match_all('/[A-Za-z0-9][A-Za-z0-9-]{2,19}/', self::westernDigits($text), $matches);
+
+        return collect($matches[0])
+            ->reject(fn (string $token): bool => in_array(strtolower($token), ['coupon', 'promo', 'code', 'voucher'], true))
+            ->first(fn (string $token): bool => preg_match('/\d/', $token) === 1 || strtoupper($token) === $token);
+    }
+
+    /**
+     * Convert Arabic-Indic digits to 0-9.
+     */
+    private static function westernDigits(string $text): string
+    {
+        return strtr($text, ['٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4', '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9']);
+    }
+
+    /**
      * Turn a tool result into a readable reply, the way the real model would
      * summarise it (without any AI, so the wording is fixed).
      *
@@ -153,8 +201,7 @@ class FakeChatbotClient implements ChatbotClient
     private static function format(string $tool, array $data): string
     {
         if (isset($data['error'])) {
-            return in_array($tool, ['get_my_orders', 'get_order_details', 'get_my_cart'], true)
-                && str_contains($data['error'], 'not logged in')
+            return str_contains($data['error'], 'not logged in')
                 ? __('api.chatbot.fake.login_required')
                 : __('api.chatbot.fake.not_found');
         }
@@ -162,11 +209,47 @@ class FakeChatbotClient implements ChatbotClient
         $currency = $data['currency'] ?? '';
 
         return match ($tool) {
-            'search_products' => $data['products'] === []
-                ? __('api.chatbot.fake.no_products')
-                : __('api.chatbot.fake.products_intro')."\n\n".collect($data['products'])
-                    ->map(fn (array $product, int $index): string => ($index + 1).'. '.self::formatProduct($product, $currency))
-                    ->implode("\n\n"),
+            'search_products', 'get_best_sellers' => self::formatProductList($data['products'], $currency),
+            'get_my_wishlist' => $data['products'] === []
+                ? __('api.chatbot.fake.wishlist_empty')
+                : self::formatProductList($data['products'], $currency),
+            'get_current_offers' => self::formatOffers($data, $currency),
+            'check_coupon' => self::formatCoupon($data, $currency),
+            'get_product_reviews' => implode("\n", [
+                __('api.chatbot.fake.reviews_intro', [
+                    'product' => $data['product_name'],
+                    'rating' => $data['average_rating'],
+                    'count' => $data['reviews_count'],
+                ]),
+                ...($data['reviews'] === []
+                    ? [__('api.chatbot.fake.no_reviews')]
+                    : collect($data['reviews'])
+                        ->map(fn (array $review): string => "• {$review['rating']}/5".($review['title'] ? " - {$review['title']}" : '').': '.Str::limit((string) $review['body'], 120))
+                        ->all()),
+            ]),
+            'get_contact_info' => implode("\n", array_filter([
+                $data['email'] ? __('api.chatbot.fake.contact_email', ['email' => $data['email']]) : null,
+                $data['phone'] ? __('api.chatbot.fake.contact_phone', ['phone' => $data['phone']]) : null,
+                ...collect($data['socials'])->map(fn (array $social): string => "• {$social['name']}: {$social['link']}")->all(),
+            ])),
+            'get_my_addresses' => $data['addresses'] === []
+                ? __('api.chatbot.fake.no_addresses')
+                : collect($data['addresses'])
+                    ->map(fn (array $address): string => '• '.implode(__('api.chatbot.fake.separator'), array_filter([$address['street'], $address['district'], $address['city']]))
+                        .($address['is_default'] ? ' ('.__('api.chatbot.fake.default_address').')' : ''))
+                    ->implode("\n"),
+            'get_my_notifications' => implode("\n", [
+                __('api.chatbot.fake.unread_notifications', ['count' => $data['unread_count']]),
+                ...collect($data['notifications'])
+                    ->map(fn (array $notification): string => '• '.($notification['is_read'] ? '' : '('.__('api.chatbot.fake.new_mark').') ')."{$notification['title']}: {$notification['body']}")
+                    ->all(),
+            ]),
+            'get_my_account' => implode("\n", array_filter([
+                __('api.chatbot.fake.account_name', ['name' => $data['name']]),
+                $data['email'] ? __('api.chatbot.fake.contact_email', ['email' => $data['email']]) : null,
+                $data['phone'] ? __('api.chatbot.fake.contact_phone', ['phone' => $data['phone']]) : null,
+                __('api.chatbot.fake.account_orders', ['count' => $data['orders_count']]),
+            ])),
             'get_product_details' => self::formatProduct($data, $currency)
                 .($data['description'] ? "\n\n".Str::limit(strip_tags((string) $data['description']), 300) : ''),
             'list_categories' => __('api.chatbot.fake.categories_intro')."\n".collect($data['categories'])
@@ -204,6 +287,72 @@ class FakeChatbotClient implements ChatbotClient
             'contact_support' => __('api.chatbot.fake.support_sent'),
             default => __('api.chatbot.fake_reply'),
         };
+    }
+
+    /**
+     * A numbered list of products, or a "nothing found" line.
+     *
+     * @param  list<array<string, mixed>>  $products
+     */
+    private static function formatProductList(array $products, string $currency): string
+    {
+        if ($products === []) {
+            return __('api.chatbot.fake.no_products');
+        }
+
+        return __('api.chatbot.fake.products_intro')."\n\n".collect($products)
+            ->map(fn (array $product, int $index): string => ($index + 1).'. '.self::formatProduct($product, $currency))
+            ->implode("\n\n");
+    }
+
+    /**
+     * Banners and discounted products.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private static function formatOffers(array $data, string $currency): string
+    {
+        if ($data['banners'] === [] && $data['products_on_sale'] === []) {
+            return __('api.chatbot.fake.no_offers');
+        }
+
+        $lines = collect($data['banners'])
+            ->map(fn (array $banner): string => '• '.trim($banner['title'].($banner['description'] ? ': '.Str::limit(strip_tags((string) $banner['description']), 100) : '')));
+
+        if ($data['products_on_sale'] !== []) {
+            $lines->push('', __('api.chatbot.fake.on_sale_intro'));
+            $lines = $lines->merge(collect($data['products_on_sale'])
+                ->map(fn (array $product): string => "• {$product['name']}: {$product['price']} {$currency} "
+                    .__('api.chatbot.fake.was', ['price' => "{$product['old_price']} {$currency}"])
+                    ." -{$product['discount_percent']}%"));
+        }
+
+        return trim($lines->implode("\n"));
+    }
+
+    /**
+     * Whether a coupon works and what it gives.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private static function formatCoupon(array $data, string $currency): string
+    {
+        if (! $data['valid']) {
+            return __("api.chatbot.fake.coupon_invalid.{$data['reason']}", [
+                'code' => $data['code'],
+                'min' => ($data['min_order_amount'] ?? '')." {$currency}",
+            ]);
+        }
+
+        $discount = $data['discount_type'] === 'percentage'
+            ? "{$data['discount_value']}%"
+            : "{$data['discount_value']} {$currency}";
+
+        return implode("\n", array_filter([
+            __('api.chatbot.fake.coupon_valid', ['code' => $data['code'], 'discount' => $discount]),
+            $data['min_order_amount'] ? __('api.chatbot.fake.coupon_min', ['min' => "{$data['min_order_amount']} {$currency}"]) : null,
+            $data['expires_at'] ? __('api.chatbot.fake.coupon_expires', ['date' => $data['expires_at']]) : null,
+        ]));
     }
 
     /**

@@ -1,12 +1,21 @@
 <?php
 
 use Anthropic\Core\Exceptions\AnthropicException;
+use App\Models\Address;
+use App\Models\Banner;
+use App\Models\Cart;
+use App\Models\CartItem;
 use App\Models\ChatConversation;
 use App\Models\ChatMessage;
 use App\Models\ContactMessage;
+use App\Models\Coupon;
+use App\Models\Notification;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\ProductReview;
+use App\Models\Setting;
 use App\Models\User;
+use App\Models\Wishlist;
 use App\Services\ChatbotClient;
 use App\Services\ChatbotToolsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -197,6 +206,126 @@ it('reads price limits and notes from a product question in fake mode', function
     expect($reply)->toContain('Cheap Oud')
         ->not->toContain('Pricey Oud')
         ->not->toContain('Cheap Rose');
+});
+
+it('lists only products with the bestseller badge as best sellers', function (): void {
+    $bestSeller = Product::factory()->create(['badges' => ['bestseller']]);
+    Product::factory()->create(['badges' => ['new']]);
+
+    $result = app(ChatbotToolsService::class)->execute('get_best_sellers', [], null);
+
+    expect($result['products'])->toHaveCount(1)
+        ->and($result['products'][0]['id'])->toBe($bestSeller->id);
+});
+
+it('lists active banners and discounted products as offers without coupon codes', function (): void {
+    Banner::factory()->create(['title' => ['en' => 'Summer Sale', 'ar' => 'تخفيضات الصيف']]);
+    Banner::factory()->inactive()->create(['title' => ['en' => 'Old Banner', 'ar' => 'قديم']]);
+    $onSale = Product::factory()->create(['price' => 80, 'old_price' => 100]);
+    Product::factory()->create(['old_price' => null]);
+    Coupon::factory()->create(['code' => 'SECRET50']);
+
+    $result = app(ChatbotToolsService::class)->execute('get_current_offers', [], null);
+
+    expect(collect($result['banners'])->pluck('title')->all())->toBe(['Summer Sale'])
+        ->and($result['products_on_sale'])->toHaveCount(1)
+        ->and($result['products_on_sale'][0]['id'])->toBe($onSale->id)
+        ->and($result['products_on_sale'][0]['discount_percent'])->toBe(20)
+        ->and(json_encode($result))->not->toContain('SECRET50');
+});
+
+it('checks coupon codes and explains why one does not work', function (): void {
+    $tools = app(ChatbotToolsService::class);
+    Coupon::factory()->create(['code' => 'SAVE10', 'discount_type' => 'percentage', 'discount_value' => 10, 'min_subtotal' => null, 'max_uses' => null]);
+    Coupon::factory()->expired()->create(['code' => 'OLD20']);
+
+    expect($tools->execute('check_coupon', ['code' => 'SAVE10'], null))
+        ->valid->toBeTrue()
+        ->discount_value->toBe(10.0)
+        ->and($tools->execute('check_coupon', ['code' => 'OLD20'], null))
+        ->valid->toBeFalse()
+        ->reason->toBe('expired')
+        ->and($tools->execute('check_coupon', ['code' => 'NOPE'], null))
+        ->reason->toBe('not_found');
+});
+
+it('checks a coupon minimum against the customer cart', function (): void {
+    $customer = User::factory()->create();
+    Coupon::factory()->create(['code' => 'BIG500', 'min_subtotal' => 500, 'max_uses' => null]);
+    CartItem::factory()->create([
+        'cart_id' => Cart::factory()->create(['user_id' => $customer->id])->id,
+        'product_id' => Product::factory()->create(['price' => 100])->id,
+        'product_variant_id' => null,
+        'quantity' => 1,
+    ]);
+
+    expect(app(ChatbotToolsService::class)->execute('check_coupon', ['code' => 'BIG500'], $customer))
+        ->valid->toBeFalse()
+        ->reason->toBe('cart_below_minimum');
+});
+
+it('returns only approved product reviews', function (): void {
+    $product = Product::factory()->create();
+    ProductReview::factory()->approved()->create(['product_id' => $product->id, 'body' => 'Lovely scent']);
+    ProductReview::factory()->create(['product_id' => $product->id, 'is_approved' => false, 'body' => 'Hidden review']);
+
+    $result = app(ChatbotToolsService::class)->execute('get_product_reviews', ['product_id' => $product->id], null);
+
+    expect(collect($result['reviews'])->pluck('body')->all())->toBe(['Lovely scent']);
+});
+
+it('returns the store contact details from settings', function (): void {
+    Setting::query()->create(['key' => 'site_email', 'value' => 'info@mukhamar.com']);
+    Setting::query()->create(['key' => 'socials', 'value' => [['name' => ['en' => 'Instagram', 'ar' => 'انستغرام'], 'link' => 'https://instagram.com/mukhamar']]]);
+
+    expect(app(ChatbotToolsService::class)->execute('get_contact_info', [], null))
+        ->email->toBe('info@mukhamar.com')
+        ->socials->toBe([['name' => 'Instagram', 'link' => 'https://instagram.com/mukhamar']]);
+});
+
+it('returns only the logged-in customer wishlist, addresses and notifications', function (): void {
+    $tools = app(ChatbotToolsService::class);
+    $customer = User::factory()->create();
+    $other = User::factory()->create();
+    $mine = Wishlist::factory()->create(['user_id' => $customer->id]);
+    Wishlist::factory()->create(['user_id' => $other->id]);
+    Address::factory()->default()->create(['user_id' => $customer->id, 'street' => 'My Street']);
+    Address::factory()->create(['user_id' => $other->id, 'street' => 'Other Street']);
+    Notification::factory()->create(['user_id' => $customer->id, 'title' => 'Mine', 'read_at' => null]);
+    Notification::factory()->create(['user_id' => $other->id, 'title' => 'Theirs']);
+
+    expect(collect($tools->execute('get_my_wishlist', [], $customer)['products'])->pluck('id')->all())->toBe([$mine->product_id])
+        ->and($tools->execute('get_my_addresses', [], $customer)['addresses'])->toHaveCount(1)
+        ->and($tools->execute('get_my_addresses', [], $customer)['addresses'][0]['street'])->toBe('My Street')
+        ->and($tools->execute('get_my_notifications', [], $customer))
+        ->unread_count->toBe(1)
+        ->notifications->toHaveCount(1);
+});
+
+it('returns the logged-in customer account details', function (): void {
+    $customer = User::factory()->create(['name' => 'Sara']);
+    Order::factory()->count(2)->create(['user_id' => $customer->id]);
+
+    expect(app(ChatbotToolsService::class)->execute('get_my_account', [], $customer))
+        ->name->toBe('Sara')
+        ->orders_count->toBe(2);
+});
+
+it('asks guests to log in for personal tools', function (string $tool): void {
+    expect(app(ChatbotToolsService::class)->execute($tool, [], null))->toHaveKey('error');
+})->with(['get_my_wishlist', 'get_my_addresses', 'get_my_notifications', 'get_my_account']);
+
+it('routes coupon, offer and contact questions in fake mode', function (): void {
+    Coupon::factory()->create(['code' => 'SAVE10', 'discount_type' => 'percentage', 'discount_value' => 10, 'min_subtotal' => null, 'max_uses' => null]);
+    Setting::query()->create(['key' => 'site_phone', 'value' => '+966 50 000 0000']);
+    Product::factory()->create(['name' => ['en' => 'Sale Oud', 'ar' => 'عود مخفض'], 'price' => 80, 'old_price' => 100]);
+
+    expect($this->postJson('/api/v1/chat', ['message' => 'الكود SAVE10 شغال؟'])->json('data.reply.text'))
+        ->toContain(__('api.chatbot.fake.coupon_valid', ['code' => 'SAVE10', 'discount' => '10%']))
+        ->and($this->postJson('/api/v1/chat', ['message' => 'فيه عروض؟'])->json('data.reply.text'))
+        ->toContain('Sale Oud')
+        ->and($this->postJson('/api/v1/chat', ['message' => 'عايزة اتواصل معاكم'])->json('data.reply.text'))
+        ->toContain('+966 50 000 0000');
 });
 
 it('sends a support message for a logged-in customer', function (): void {

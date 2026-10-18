@@ -2,12 +2,17 @@
 
 namespace App\Services;
 
+use App\Models\Address;
+use App\Models\Banner;
 use App\Models\Cart;
 use App\Models\Category;
 use App\Models\ContactMessage;
+use App\Models\Coupon;
+use App\Models\Notification;
 use App\Models\Order;
 use App\Models\PaymentMethod;
 use App\Models\Product;
+use App\Models\ProductReview;
 use App\Models\ProductVariant;
 use App\Models\Setting;
 use App\Models\User;
@@ -121,6 +126,74 @@ class ChatbotToolsService
                     'required' => ['message'],
                 ],
             ],
+            [
+                'name' => 'get_best_sellers',
+                'description' => "List the store's best-selling perfumes.",
+                'inputSchema' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'limit' => ['type' => 'integer', 'description' => 'Number of results, 1 to 10. Defaults to 5.'],
+                    ],
+                ],
+            ],
+            [
+                'name' => 'get_current_offers',
+                'description' => 'Get the current promotions: active banners shown in the app and products on sale (with old and new price). Does not reveal coupon codes.',
+                'inputSchema' => ['type' => 'object', 'properties' => new \stdClass],
+            ],
+            [
+                'name' => 'check_coupon',
+                'description' => 'Check whether a coupon code the customer gave is valid, what discount it gives, its minimum order amount and expiry. For logged-in customers it is checked against their cart total. Never guess codes; only check codes the customer typed.',
+                'inputSchema' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'code' => ['type' => 'string', 'description' => 'The coupon code exactly as the customer wrote it.'],
+                    ],
+                    'required' => ['code'],
+                ],
+            ],
+            [
+                'name' => 'get_product_reviews',
+                'description' => 'Get the approved customer reviews of a product with its average rating.',
+                'inputSchema' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'product_id' => ['type' => 'integer', 'description' => 'The product id returned by search_products.'],
+                        'limit' => ['type' => 'integer', 'description' => 'Number of reviews, 1 to 10. Defaults to 5.'],
+                    ],
+                    'required' => ['product_id'],
+                ],
+            ],
+            [
+                'name' => 'get_contact_info',
+                'description' => "Get the store's name, support email, phone number and social media links.",
+                'inputSchema' => ['type' => 'object', 'properties' => new \stdClass],
+            ],
+            [
+                'name' => 'get_my_wishlist',
+                'description' => "List the products in the logged-in customer's wishlist (favourites) with prices and stock.",
+                'inputSchema' => ['type' => 'object', 'properties' => new \stdClass],
+            ],
+            [
+                'name' => 'get_my_addresses',
+                'description' => "List the logged-in customer's saved delivery addresses and which one is the default.",
+                'inputSchema' => ['type' => 'object', 'properties' => new \stdClass],
+            ],
+            [
+                'name' => 'get_my_notifications',
+                'description' => "List the logged-in customer's latest app notifications and how many are unread.",
+                'inputSchema' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'limit' => ['type' => 'integer', 'description' => 'Number of notifications, 1 to 10. Defaults to 5.'],
+                    ],
+                ],
+            ],
+            [
+                'name' => 'get_my_account',
+                'description' => "Get the logged-in customer's account details: name, email, phone, whether the phone is verified, app language, member since and number of orders.",
+                'inputSchema' => ['type' => 'object', 'properties' => new \stdClass],
+            ],
         ];
     }
 
@@ -142,8 +215,242 @@ class ChatbotToolsService
             'get_order_details' => $user ? $this->orderDetails($user, (string) ($input['order_no'] ?? '')) : self::loginRequired(),
             'get_my_cart' => $user ? $this->cart($user) : self::loginRequired(),
             'contact_support' => $this->contactSupport($input, $user),
+            'get_best_sellers' => $this->bestSellers($input),
+            'get_current_offers' => $this->offers(),
+            'check_coupon' => $this->checkCoupon((string) ($input['code'] ?? ''), $user),
+            'get_product_reviews' => $this->productReviews((int) ($input['product_id'] ?? 0), $input),
+            'get_contact_info' => $this->contactInfo(),
+            'get_my_wishlist' => $user ? $this->wishlist($user) : self::loginRequired(),
+            'get_my_addresses' => $user ? $this->addresses($user) : self::loginRequired(),
+            'get_my_notifications' => $user ? $this->notifications($user, $input) : self::loginRequired(),
+            'get_my_account' => $user ? $this->account($user) : self::loginRequired(),
             default => ['error' => "Unknown tool: {$name}"],
         };
+    }
+
+    /**
+     * @param  array<string, mixed>  $input
+     * @return array<string, mixed>
+     */
+    private function bestSellers(array $input): array
+    {
+        $products = Product::query()
+            ->with(['category', 'variants'])
+            ->where('is_active', true)
+            ->whereJsonContains('badges', 'bestseller')
+            ->orderByDesc('reviews_count')
+            ->orderByDesc('id')
+            ->limit(max(1, min(10, (int) ($input['limit'] ?? 5))))
+            ->get();
+
+        return [
+            'currency' => $this->settings->currency(),
+            'count' => $products->count(),
+            'products' => $products->map(fn (Product $product): array => $this->productSummary($product))->all(),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function offers(): array
+    {
+        $onSale = Product::query()
+            ->with(['category', 'variants'])
+            ->where('is_active', true)
+            ->whereNotNull('old_price')
+            ->whereColumn('old_price', '>', 'price')
+            ->orderByDesc('id')
+            ->limit(5)
+            ->get();
+
+        return [
+            'currency' => $this->settings->currency(),
+            'banners' => Banner::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->get()
+                ->map(fn (Banner $banner): array => [
+                    'title' => $banner->title,
+                    'description' => $banner->description,
+                ])
+                ->all(),
+            'products_on_sale' => $onSale->map(fn (Product $product): array => [
+                ...$this->productSummary($product),
+                'discount_percent' => (int) round((1 - (float) $product->price / (float) $product->old_price) * 100),
+            ])->all(),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function checkCoupon(string $code, ?User $user): array
+    {
+        $coupon = Coupon::query()->where('code', trim($code))->first();
+
+        if (! $coupon) {
+            return ['code' => $code, 'valid' => false, 'reason' => 'not_found'];
+        }
+
+        $cart = $user
+            ? Cart::query()->where('user_id', $user->id)->with(['items.product', 'items.variant'])->first()
+            : null;
+        $cartSubtotal = $cart?->items->sum(fn ($item) => $item->lineTotal());
+
+        $reason = match (true) {
+            ! $coupon->is_active => 'inactive',
+            $coupon->starts_at && now()->lt($coupon->starts_at) => 'not_started',
+            $coupon->expires_at && now()->gt($coupon->expires_at) => 'expired',
+            $coupon->max_uses && $coupon->used_count >= $coupon->max_uses => 'used_up',
+            $cartSubtotal !== null && $coupon->min_subtotal && $cartSubtotal < $coupon->min_subtotal => 'cart_below_minimum',
+            default => null,
+        };
+
+        return [
+            'code' => $coupon->code,
+            'valid' => $reason === null,
+            'reason' => $reason,
+            'currency' => $this->settings->currency(),
+            'discount_type' => $coupon->discount_type,
+            'discount_value' => (float) $coupon->discount_value,
+            'min_order_amount' => $coupon->min_subtotal !== null ? (float) $coupon->min_subtotal : null,
+            'expires_at' => $coupon->expires_at?->format('Y-m-d'),
+            'cart_subtotal' => $cartSubtotal,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $input
+     * @return array<string, mixed>
+     */
+    private function productReviews(int $productId, array $input): array
+    {
+        $product = Product::query()->where('is_active', true)->find($productId);
+
+        if (! $product) {
+            return ['error' => 'Product not found.'];
+        }
+
+        return [
+            'product_id' => $product->id,
+            'product_name' => $product->name,
+            'average_rating' => (float) $product->rating,
+            'reviews_count' => (int) $product->reviews_count,
+            'reviews' => $product->reviews()
+                ->where('is_approved', true)
+                ->latest()
+                ->limit(max(1, min(10, (int) ($input['limit'] ?? 5))))
+                ->get()
+                ->map(fn (ProductReview $review): array => [
+                    'rating' => $review->rating,
+                    'title' => $review->title,
+                    'body' => $review->body,
+                    'date' => $review->created_at?->format('Y-m-d'),
+                ])
+                ->all(),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function contactInfo(): array
+    {
+        $locale = app()->getLocale();
+
+        return [
+            'store_name' => $this->settings->get('site_name', config('services.chatbot.store_name')),
+            'email' => $this->settings->get('site_email'),
+            'phone' => $this->settings->get('site_phone'),
+            'socials' => collect($this->settings->get('socials', []))
+                ->map(fn (array $social): array => [
+                    'name' => is_array($social['name'] ?? null)
+                        ? ($social['name'][$locale] ?? $social['name']['en'] ?? null)
+                        : ($social['name'] ?? null),
+                    'link' => $social['link'] ?? null,
+                ])
+                ->filter(fn (array $social): bool => filled($social['link']))
+                ->values()
+                ->all(),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function wishlist(User $user): array
+    {
+        $products = $user->wishlist()
+            ->with(['category', 'variants'])
+            ->where('is_active', true)
+            ->get();
+
+        return [
+            'currency' => $this->settings->currency(),
+            'count' => $products->count(),
+            'products' => $products->map(fn (Product $product): array => $this->productSummary($product))->all(),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function addresses(User $user): array
+    {
+        return [
+            'addresses' => $user->addresses()
+                ->orderByDesc('is_default')
+                ->get()
+                ->map(fn (Address $address): array => [
+                    'label' => $address->label,
+                    'recipient_name' => $address->recipient_name,
+                    'city' => $address->city,
+                    'district' => $address->district,
+                    'street' => $address->street,
+                    'building' => $address->building,
+                    'is_default' => $address->is_default,
+                ])
+                ->all(),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $input
+     * @return array<string, mixed>
+     */
+    private function notifications(User $user, array $input): array
+    {
+        return [
+            'unread_count' => $user->customNotifications()->whereNull('read_at')->count(),
+            'notifications' => $user->customNotifications()
+                ->latest()
+                ->limit(max(1, min(10, (int) ($input['limit'] ?? 5))))
+                ->get()
+                ->map(fn (Notification $notification): array => [
+                    'title' => $notification->title,
+                    'body' => $notification->body,
+                    'is_read' => $notification->isRead(),
+                    'date' => $notification->created_at?->format('Y-m-d H:i'),
+                ])
+                ->all(),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function account(User $user): array
+    {
+        return [
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone' => $user->phone,
+            'phone_verified' => (bool) $user->is_phone_confirmed,
+            'language' => $user->lang,
+            'member_since' => $user->created_at?->format('Y-m-d'),
+            'orders_count' => $user->orders()->count(),
+        ];
     }
 
     /**
