@@ -18,6 +18,7 @@ class ChatMessageResource extends JsonResource
             'id' => $this->id,
             'role' => $this->role,
             'text' => $this->text,
+            'links' => $this->links ?? [],
             'created_at' => ($this->created_at ?? now())->format('Y-m-d H:i:s'),
         ];
     }
