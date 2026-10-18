@@ -430,6 +430,86 @@ it('answers app name and terms of use questions in fake mode', function (): void
         ->toContain('Orders can be cancelled before shipping.');
 });
 
+it('builds page links in the notification path format', function (): void {
+    $tools = app(ChatbotToolsService::class);
+    $customer = User::factory()->create();
+    $product = Product::factory()->create(['slug' => 'royal-oud']);
+    $order = Order::factory()->create(['user_id' => $customer->id, 'order_no' => 'MKR-1234']);
+
+    expect($tools->execute('get_page_link', ['page' => 'product', 'product_id' => $product->id], null)['url'])->toBe('/products/royal-oud')
+        ->and($tools->execute('get_page_link', ['page' => 'cart'], $customer)['url'])->toBe('/cart')
+        ->and($tools->execute('get_page_link', ['page' => 'order', 'order_no' => 'MKR-1234'], $customer)['url'])->toBe("/orders/{$order->id}")
+        ->and($tools->execute('get_page_link', ['page' => 'terms'], null)['url'])->toBe('/terms');
+
+    config(['services.chatbot.link_base' => 'mukhamar://']);
+
+    expect($tools->execute('get_page_link', ['page' => 'cart'], $customer)['url'])->toBe('mukhamar://cart')
+        ->and($tools->execute('get_page_link', ['page' => 'home'], null)['url'])->toBe('mukhamar://');
+
+    config(['services.chatbot.link_base' => 'https://mukhamar.com']);
+
+    expect($tools->execute('get_page_link', ['page' => 'cart'], $customer)['url'])->toBe('https://mukhamar.com/cart');
+});
+
+it('does not link to missing products or another customer order', function (): void {
+    $tools = app(ChatbotToolsService::class);
+    $order = Order::factory()->create();
+
+    expect($tools->execute('get_page_link', ['page' => 'product', 'product_id' => 999], null))->toHaveKey('error')
+        ->and($tools->execute('get_page_link', ['page' => 'order', 'order_no' => $order->order_no], User::factory()->create()))->toHaveKey('error');
+});
+
+it('offers a login link when a guest asks for a private page', function (): void {
+    $result = app(ChatbotToolsService::class)->execute('get_page_link', ['page' => 'wishlist'], null);
+
+    expect($result)->toHaveKey('error')
+        ->and($result['login_link']['url'])->toBe('/login');
+});
+
+it('returns page links with the reply and in the history', function (): void {
+    $this->actingAs(User::factory()->create(), 'sanctum');
+
+    $response = $this->postJson('/api/v1/chat', ['message' => 'وديني على السلة'])
+        ->assertOk()
+        ->assertJsonPath('data.reply.links', [['page' => 'cart', 'title' => 'سلة التسوق', 'label' => 'اضغط هنا', 'url' => '/cart']]);
+
+    expect($response->json('data.reply.text'))
+        ->toBe(trans('api.chatbot.fake.header', locale: 'ar')."\n\n".trans('api.chatbot.fake.page_link', ['title' => 'سلة التسوق'], 'ar'))
+        ->not->toContain('/cart');
+
+    $this->getJson('/api/v1/chat/'.$response->json('data.conversation_id'))
+        ->assertJsonPath('data.messages.1.links.0.url', '/cart')
+        ->assertJsonPath('data.messages.0.links', []);
+});
+
+it('gives a guest a login button when they ask for a private page', function (): void {
+    $this->postJson('/api/v1/chat', ['message' => 'take me to my wishlist'])
+        ->assertOk()
+        ->assertJsonPath('data.reply.links', [['page' => 'login', 'title' => 'the login page', 'label' => 'Click here', 'url' => '/login']]);
+});
+
+it('shows link buttons in the admin transcript', function (): void {
+    $admin = User::factory()->create(['is_admin' => true, 'is_active' => true]);
+    $conversation = ChatConversation::factory()->create();
+    ChatMessage::factory()->for($conversation, 'conversation')->assistant()->create([
+        'text' => 'اضغط على الزر بالأسفل',
+        'links' => [['page' => 'cart', 'title' => 'سلة التسوق', 'label' => 'اضغط هنا', 'url' => '/cart']],
+    ]);
+
+    $this->actingAs($admin)->get(route('admin.chat-conversations.show', $conversation))
+        ->assertOk()
+        ->assertSee('href="/cart"', false)
+        ->assertSee('اضغط هنا');
+});
+
+it('links to a product page by its number in fake mode', function (): void {
+    $product = Product::factory()->create(['slug' => 'royal-oud']);
+
+    $this->postJson('/api/v1/chat', ['message' => "open product {$product->id}"])
+        ->assertOk()
+        ->assertJsonPath('data.reply.links.0.url', '/products/royal-oud');
+});
+
 it('sends a support message for a logged-in customer', function (): void {
     $customer = User::factory()->create();
 

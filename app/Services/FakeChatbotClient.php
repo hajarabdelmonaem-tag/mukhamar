@@ -36,6 +36,29 @@ class FakeChatbotClient implements ChatbotClient
     ];
 
     /**
+     * Words that mean the customer wants to be taken to a page.
+     */
+    private const LINK_PATTERN = '/وديني|ودّيني|ودينى|افتح|لينك|رابط|صفح[ةه]|open|go to|take me|link/iu';
+
+    /**
+     * Keyword patterns mapped to the app page a link request is for.
+     *
+     * @var array<string, string>
+     */
+    private const LINK_PAGES = [
+        '/سل[ةه]|cart/iu' => 'cart',
+        '/طلبات|طلباتي|orders/iu' => 'orders',
+        '/مفضل|wishlist|favou?rite/iu' => 'wishlist',
+        '/عنوان|عناوين|address/iu' => 'addresses',
+        '/إشعار|اشعار|notification/iu' => 'notifications',
+        '/خصوصي|privacy/iu' => 'privacy',
+        '/شروط|سياس|terms|policy/iu' => 'terms',
+        '/تواصل|contact/iu' => 'contact',
+        '/دخول|login|sign ?in/iu' => 'login',
+        '/حساب|ملفي|profile|account/iu' => 'profile',
+    ];
+
+    /**
      * Words that mean the customer is asking about products in general.
      */
     private const PRODUCT_PATTERN = '/عطر|عطور|منتج|برفان|بخور|دهن|perfume|fragrance|product|scent|bakhoor|incense|recommend|ترشيح|رشح/iu';
@@ -129,6 +152,10 @@ class FakeChatbotClient implements ChatbotClient
      */
     private static function route(string $text): ?array
     {
+        if (preg_match(self::LINK_PATTERN, $text)) {
+            return ['get_page_link', self::linkInput($text)];
+        }
+
         if (preg_match(self::COUPON_PATTERN, $text)) {
             $code = self::couponCode($text);
 
@@ -191,6 +218,37 @@ class FakeChatbotClient implements ChatbotClient
     }
 
     /**
+     * Work out which page a "take me to…" message is about: a product or
+     * category by its number, an order by its number, or a named screen.
+     *
+     * @return array<string, mixed>
+     */
+    private static function linkInput(string $text): array
+    {
+        $text = self::westernDigits($text);
+
+        if (preg_match('/MKR-\d+/i', $text, $match)) {
+            return ['page' => 'order', 'order_no' => strtoupper($match[0])];
+        }
+
+        if (preg_match('/(?:منتج|عطر|product)\D*(\d+)/iu', $text, $match)) {
+            return ['page' => 'product', 'product_id' => (int) $match[1]];
+        }
+
+        if (preg_match('/(?:قسم|category)\D*(\d+)/iu', $text, $match)) {
+            return ['page' => 'category', 'category_id' => (int) $match[1]];
+        }
+
+        foreach (self::LINK_PAGES as $pattern => $page) {
+            if (preg_match($pattern, $text)) {
+                return ['page' => $page];
+            }
+        }
+
+        return ['page' => 'home'];
+    }
+
+    /**
      * Find a coupon-looking token (letters and digits, with a digit or in
      * capitals) in the message.
      */
@@ -221,7 +279,7 @@ class FakeChatbotClient implements ChatbotClient
     {
         if (isset($data['error'])) {
             return str_contains($data['error'], 'not logged in')
-                ? __('api.chatbot.fake.login_required')
+                ? __('api.chatbot.fake.login_required').(isset($data['login_link']) ? "\n".__('api.chatbot.fake.tap_button') : '')
                 : __('api.chatbot.fake.not_found');
         }
 
@@ -288,6 +346,7 @@ class FakeChatbotClient implements ChatbotClient
                 : trim(($data['title'] ?? '')."\n\n".collect($data['sections'])
                     ->map(fn (array $section): string => trim(($section['heading'] ? "• {$section['heading']}" : '')."\n".Str::limit(strip_tags((string) ($section['body'] ?? '')), 500)))
                     ->implode("\n\n")),
+            'get_page_link' => __('api.chatbot.fake.page_link', ['title' => $data['title']]),
             'get_app_info' => implode("\n", array_filter([
                 __('api.chatbot.fake.app_name', ['name' => $data['app_name']]),
                 $data['under_maintenance'] ? __('api.chatbot.fake.app_maintenance') : null,

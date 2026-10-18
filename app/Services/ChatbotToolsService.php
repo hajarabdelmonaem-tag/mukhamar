@@ -26,6 +26,37 @@ use Illuminate\Database\Eloquent\Builder;
  */
 class ChatbotToolsService
 {
+    /**
+     * App screen paths, in the same relative format notifications use for
+     * their action_url (for example /products/royal-oud). Placeholders are
+     * filled by get_page_link; the mobile app maps each path to a screen.
+     *
+     * @var array<string, string>
+     */
+    public const PAGE_PATHS = [
+        'home' => '/',
+        'product' => '/products/{slug}',
+        'category' => '/categories/{slug}',
+        'cart' => '/cart',
+        'orders' => '/orders',
+        'order' => '/orders/{id}',
+        'wishlist' => '/wishlist',
+        'addresses' => '/addresses',
+        'profile' => '/profile',
+        'notifications' => '/notifications',
+        'terms' => '/terms',
+        'privacy' => '/policy',
+        'contact' => '/contact',
+        'login' => '/login',
+    ];
+
+    /**
+     * Screens that only make sense for a logged-in customer.
+     *
+     * @var list<string>
+     */
+    private const PRIVATE_PAGES = ['cart', 'orders', 'order', 'wishlist', 'addresses', 'profile', 'notifications'];
+
     public function __construct(
         private SettingsService $settings,
         private PricingService $pricing,
@@ -83,6 +114,20 @@ class ChatbotToolsService
                     'type' => 'object',
                     'properties' => [
                         'page' => ['type' => 'string', 'enum' => ['terms', 'privacy'], 'description' => 'terms is the terms and conditions / terms of use / usage policy (returns and cancellations are covered there if the store lists them); privacy is the privacy policy (what personal data is collected and how it is used).'],
+                    ],
+                    'required' => ['page'],
+                ],
+            ],
+            [
+                'name' => 'get_page_link',
+                'description' => 'Get the link that opens a screen of the app. Use it whenever the customer asks to go to, open or get a link to a page (a product, a category, their cart, orders, an order, wishlist, addresses, profile, notifications, the terms or privacy page, the contact page, login or home). The app shows the link as a "Click here" button under your reply, so tell the customer to tap the button below; do not write the url in your text.',
+                'inputSchema' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'page' => ['type' => 'string', 'enum' => array_keys(self::PAGE_PATHS)],
+                        'product_id' => ['type' => 'integer', 'description' => 'Required for page=product. The id from search_products.'],
+                        'category_id' => ['type' => 'integer', 'description' => 'Required for page=category. The id from list_categories.'],
+                        'order_no' => ['type' => 'string', 'description' => "Required for page=order. The customer's order number, for example MKR-1234."],
                     ],
                     'required' => ['page'],
                 ],
@@ -227,6 +272,7 @@ class ChatbotToolsService
             'get_product_reviews' => $this->productReviews((int) ($input['product_id'] ?? 0), $input),
             'get_contact_info' => $this->contactInfo(),
             'get_app_info' => $this->appInfo(),
+            'get_page_link' => $this->pageLink($input, $user),
             'get_my_wishlist' => $user ? $this->wishlist($user) : self::loginRequired(),
             'get_my_addresses' => $user ? $this->addresses($user) : self::loginRequired(),
             'get_my_notifications' => $user ? $this->notifications($user, $input) : self::loginRequired(),
@@ -636,6 +682,83 @@ class ChatbotToolsService
                 ->filter(fn (array $section): bool => filled($section['heading']) || filled($section['body']))
                 ->values()
                 ->all(),
+        ];
+    }
+
+    /**
+     * Build the link to an app screen, checking that the product, category
+     * or order exists (and that the order belongs to this customer).
+     *
+     * @param  array<string, mixed>  $input
+     * @return array<string, mixed>
+     */
+    private function pageLink(array $input, ?User $user): array
+    {
+        $page = (string) ($input['page'] ?? '');
+
+        if (! array_key_exists($page, self::PAGE_PATHS)) {
+            return ['error' => "Unknown page: {$page}"];
+        }
+
+        $replacements = [];
+        $title = __("api.chatbot.pages.{$page}");
+
+        if ($page === 'product') {
+            $product = Product::query()->where('is_active', true)->find((int) ($input['product_id'] ?? 0));
+
+            if (! $product) {
+                return ['error' => 'Product not found.'];
+            }
+
+            $replacements['{slug}'] = $product->slug;
+            $title = $product->name;
+        }
+
+        if ($page === 'category') {
+            $category = Category::query()->where('is_active', true)->find((int) ($input['category_id'] ?? 0));
+
+            if (! $category) {
+                return ['error' => 'Category not found.'];
+            }
+
+            $replacements['{slug}'] = $category->slug;
+            $title = $category->name;
+        }
+
+        if (in_array($page, self::PRIVATE_PAGES, true) && ! $user) {
+            return [...self::loginRequired(), 'login_link' => $this->link('login', __('api.chatbot.pages.login'))];
+        }
+
+        if ($page === 'order') {
+            $order = $user->orders()->where('order_no', trim((string) ($input['order_no'] ?? '')))->first();
+
+            if (! $order) {
+                return ['error' => 'No order with this number was found for this customer.'];
+            }
+
+            $replacements['{id}'] = (string) $order->id;
+            $title = __('api.chatbot.pages.order', ['order_no' => $order->order_no]);
+        }
+
+        return $this->link($page, (string) $title, $replacements);
+    }
+
+    /**
+     * A link payload: the page key, a readable title and the full url.
+     *
+     * @param  array<string, string>  $replacements
+     * @return array{page: string, title: string, url: string}
+     */
+    private function link(string $page, string $title, array $replacements = []): array
+    {
+        $path = strtr(self::PAGE_PATHS[$page], array_map('rawurlencode', $replacements));
+        $base = (string) config('services.chatbot.link_base');
+
+        return [
+            'page' => $page,
+            'title' => $title,
+            // A base ending in "/" (mukhamar://, https://site.com/) takes the path without its leading slash.
+            'url' => str_ends_with($base, '/') ? $base.ltrim($path, '/') : $base.$path,
         ];
     }
 
