@@ -22,6 +22,22 @@ class ChatbotService
     ) {}
 
     /**
+     * The language a message is written in ("ar" or "en"), judged by which
+     * alphabet most of its letters use, or null when it has no letters.
+     */
+    public static function languageOf(string $text): ?string
+    {
+        $arabic = preg_match_all('/\p{Arabic}/u', $text);
+        $latin = preg_match_all('/[A-Za-z]/', $text);
+
+        if ($arabic === 0 && $latin === 0) {
+            return null;
+        }
+
+        return $arabic >= $latin ? 'ar' : 'en';
+    }
+
+    /**
      * Whether the conversation has used up its allowed customer messages.
      */
     public function hasReachedTurnLimit(?ChatConversation $conversation): bool
