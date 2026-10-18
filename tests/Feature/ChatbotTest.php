@@ -9,6 +9,7 @@ use App\Models\ChatConversation;
 use App\Models\ChatMessage;
 use App\Models\ContactMessage;
 use App\Models\Coupon;
+use App\Models\Intro;
 use App\Models\Notification;
 use App\Models\Order;
 use App\Models\Product;
@@ -369,6 +370,64 @@ it('routes coupon, offer and contact questions in fake mode', function (): void 
         ->toContain('عود مخفض')
         ->and($this->postJson('/api/v1/chat', ['message' => 'عايزة اتواصل معاكم'])->json('data.reply.text'))
         ->toContain('+966 50 000 0000');
+});
+
+it('returns the app information from settings and intro screens', function (): void {
+    Setting::query()->create(['key' => 'site_name', 'value' => 'Mukhamar']);
+    Setting::query()->create(['key' => 'maintenance_mode', 'value' => 'false']);
+    Setting::query()->create(['key' => 'terms_conditions', 'value' => ['title' => ['en' => 'Terms'], 'sections' => []]]);
+    Intro::query()->create(['title' => ['en' => 'Discover oud', 'ar' => 'اكتشف العود'], 'is_active' => true]);
+    Intro::query()->create(['title' => ['en' => 'Hidden slide', 'ar' => 'مخفي'], 'is_active' => false]);
+
+    expect(app(ChatbotToolsService::class)->execute('get_app_info', [], null))
+        ->app_name->toBe('Mukhamar')
+        ->under_maintenance->toBeFalse()
+        ->legal_pages->toBe(['terms' => true, 'privacy' => false])
+        ->and(collect(app(ChatbotToolsService::class)->execute('get_app_info', [], null)['features'])->pluck('title')->all())
+        ->toBe(['Discover oud']);
+});
+
+it('returns every section of a policy page in the current language', function (): void {
+    app()->setLocale('ar');
+    Setting::query()->create(['key' => 'terms_conditions', 'value' => [
+        'title' => ['en' => 'Terms of Use', 'ar' => 'شروط الاستخدام'],
+        'sections' => collect(range(1, 4))->map(fn (int $i): array => [
+            'heading' => ['en' => "Section {$i}", 'ar' => "القسم {$i}"],
+            'body' => ['en' => "Body {$i}", 'ar' => "النص {$i}"],
+        ])->all(),
+    ]]);
+
+    $result = app(ChatbotToolsService::class)->execute('get_policy', ['page' => 'terms'], null);
+
+    expect($result['title'])->toBe('شروط الاستخدام')
+        ->and($result['sections'])->toHaveCount(4)
+        ->and($result['sections'][3])->toBe(['heading' => 'القسم 4', 'body' => 'النص 4']);
+});
+
+it('reads a policy page saved in the older single-body format', function (): void {
+    Setting::query()->create(['key' => 'policy', 'value' => ['en' => 'We keep your data safe.', 'ar' => 'نحافظ على بياناتك.']]);
+
+    expect(app(ChatbotToolsService::class)->execute('get_policy', ['page' => 'privacy'], null)['sections'])
+        ->toBe([['heading' => null, 'body' => 'We keep your data safe.']]);
+});
+
+it('says when a policy page is not published', function (): void {
+    expect(app(ChatbotToolsService::class)->execute('get_policy', ['page' => 'privacy'], null))->toHaveKey('error');
+});
+
+it('answers app name and terms of use questions in fake mode', function (): void {
+    Setting::query()->create(['key' => 'site_name', 'value' => 'Mukhamar']);
+    Setting::query()->create(['key' => 'terms_conditions', 'value' => [
+        'title' => ['en' => 'Terms of Use', 'ar' => 'شروط الاستخدام'],
+        'sections' => [['heading' => ['en' => 'Orders', 'ar' => 'الطلبات'], 'body' => ['en' => 'Orders can be cancelled before shipping.', 'ar' => 'يمكن إلغاء الطلب قبل الشحن.']]],
+    ]]);
+
+    expect($this->postJson('/api/v1/chat', ['message' => 'ايه اسم التطبيق؟'])->json('data.reply.text'))
+        ->toContain('Mukhamar')
+        ->and($this->postJson('/api/v1/chat', ['message' => 'ايه سياسة الاستخدام؟'])->json('data.reply.text'))
+        ->toContain('يمكن إلغاء الطلب قبل الشحن.')
+        ->and($this->postJson('/api/v1/chat', ['message' => 'what are the terms of use?'])->json('data.reply.text'))
+        ->toContain('Orders can be cancelled before shipping.');
 });
 
 it('sends a support message for a logged-in customer', function (): void {
