@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['chat_conversation_id', 'role', 'content', 'text', 'links', 'input_tokens', 'output_tokens'])]
+#[Fillable(['chat_conversation_id', 'role', 'key', 'content', 'text', 'data', 'input_tokens', 'output_tokens'])]
 class ChatMessage extends Model
 {
     /** @use HasFactory<ChatMessageFactory> */
@@ -27,7 +27,7 @@ class ChatMessage extends Model
     {
         return [
             'content' => 'array',
-            'links' => 'array',
+            'data' => 'array',
             'input_tokens' => 'integer',
             'output_tokens' => 'integer',
         ];

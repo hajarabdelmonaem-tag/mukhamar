@@ -12,7 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('chat_messages', function (Blueprint $table) {
-            $table->json('links')->nullable()->after('text');
+            $table->string('key', 50)->nullable()->after('role');
+            $table->json('data')->nullable()->after('text');
         });
     }
 
@@ -22,7 +23,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('chat_messages', function (Blueprint $table) {
-            $table->dropColumn('links');
+            $table->dropColumn(['key', 'data']);
         });
     }
 };

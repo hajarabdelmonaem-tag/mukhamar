@@ -67,7 +67,7 @@ class ChatbotService
             ])->all()
             : [];
 
-        $links = [];
+        $display = ['key' => null, 'data' => null];
         $newTurns = [[
             'role' => ChatMessage::ROLE_USER,
             'content' => [['type' => 'text', 'text' => $text]],
@@ -114,12 +114,12 @@ class ChatbotService
 
             $newTurns[] = [
                 'role' => ChatMessage::ROLE_USER,
-                'content' => $this->runTools($response['content'], $user, $links),
+                'content' => $this->runTools($response['content'], $user, $display),
                 'text' => null,
             ];
         }
 
-        $newTurns[array_key_last($newTurns)]['links'] = $links === [] ? null : array_values($links);
+        $newTurns[array_key_last($newTurns)] += $display;
 
         $reply = $this->store($conversation, $user, $newTurns);
 
@@ -128,14 +128,15 @@ class ChatbotService
 
     /**
      * Run every tool call in a turn and build the matching tool results.
-     * Page links the tools return are collected into $links (keyed by url
-     * so a link is only listed once) for the app to show as buttons.
+     *
+     * $display is set to the name and records of the last tool that ran, which
+     * the reply returns as its "key" and "data".
      *
      * @param  list<array<string, mixed>>  $content
-     * @param  array<string, array{page: string, title: string, label: string, url: string}>  $links
+     * @param  array{key: ?string, data: ?list<mixed>}  $display
      * @return list<array<string, mixed>>
      */
-    private function runTools(array $content, ?User $user, array &$links): array
+    private function runTools(array $content, ?User $user, array &$display): array
     {
         $results = [];
 
@@ -151,15 +152,11 @@ class ChatbotService
                 $result = ['error' => 'The tool failed. Apologise and offer to contact the support team.'];
             }
 
-            foreach ([$result, $result['login_link'] ?? null] as $link) {
-                if (isset($link['page'], $link['title'], $link['url'])) {
-                    $links[$link['url']] = [
-                        'page' => $link['page'],
-                        'title' => $link['title'],
-                        'label' => __('api.chatbot.link_label'),
-                        'url' => $link['url'],
-                    ];
-                }
+            try {
+                $display = ['key' => $block['name'], 'data' => $this->tools->displayData($block['name'], $result, $user)];
+            } catch (\Throwable $exception) {
+                report($exception);
+                $display = ['key' => $block['name'], 'data' => []];
             }
 
             $results[] = [
@@ -218,7 +215,6 @@ class ChatbotService
         - Keep replies short enough for a phone screen. Use plain text with short lines; no markdown tables or headings.
         - Order, cart, wishlist, address, notification and account tools only work for logged-in customers. If a guest asks about these, ask them to log in to the app first.
         - Only check coupon codes the customer typed. Never reveal or suggest coupon codes on your own.
-        - When the customer asks to go to, open or get a link to a page in the app, use get_page_link. The app shows each link as a button under your reply, so tell the customer to tap the button below and do not write the url in your text. Never make up links.
         - Before using contact_support, confirm with the customer what will be sent. For guests, also ask for their name and phone number.
         - You cannot place orders, change carts, cancel orders or issue refunds. For those, explain how to do it in the app or offer to contact the support team.
         - Only help with topics related to the store and its products. Politely decline anything else.

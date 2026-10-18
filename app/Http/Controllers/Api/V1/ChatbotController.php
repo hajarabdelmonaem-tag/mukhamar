@@ -31,6 +31,9 @@ class ChatbotController extends Controller
 
         $user = $request->user('sanctum');
 
+        // Let the API resources in the reply data (e.g. is_wishlisted) see the customer.
+        $request->setUserResolver(fn () => $user);
+
         $conversation = $request->conversation_id
             ? ChatConversation::query()->where('uuid', $request->conversation_id)->first()
             : null;

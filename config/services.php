@@ -40,9 +40,6 @@ return [
         'enabled' => (bool) env('CHATBOT_ENABLED', true),
         'driver' => env('CHATBOT_DRIVER', 'fake'),
         'store_name' => env('CHATBOT_STORE_NAME', 'Mukhamar'),
-        // Prefix for page links. Empty keeps relative app paths like /cart
-        // (same as notification action_url); set to mukhamar:// or a website url if needed.
-        'link_base' => env('CHATBOT_LINK_BASE', ''),
         'max_message_length' => (int) env('CHATBOT_MAX_MESSAGE_LENGTH', 1000),
         'max_turns' => (int) env('CHATBOT_MAX_TURNS', 30),
         'max_tool_rounds' => (int) env('CHATBOT_MAX_TOOL_ROUNDS', 5),

@@ -2,6 +2,13 @@
 
 namespace App\Services;
 
+use App\Http\Resources\Api\V1\AddressResource;
+use App\Http\Resources\Api\V1\CartResource;
+use App\Http\Resources\Api\V1\CategoryResource;
+use App\Http\Resources\Api\V1\NotificationResource;
+use App\Http\Resources\Api\V1\OrderResource;
+use App\Http\Resources\Api\V1\ProductResource;
+use App\Http\Resources\Api\V1\ReviewResource;
 use App\Models\Address;
 use App\Models\Banner;
 use App\Models\Cart;
@@ -26,37 +33,6 @@ use Illuminate\Database\Eloquent\Builder;
  */
 class ChatbotToolsService
 {
-    /**
-     * App screen paths, in the same relative format notifications use for
-     * their action_url (for example /products/royal-oud). Placeholders are
-     * filled by get_page_link; the mobile app maps each path to a screen.
-     *
-     * @var array<string, string>
-     */
-    public const PAGE_PATHS = [
-        'home' => '/',
-        'product' => '/products/{slug}',
-        'category' => '/categories/{slug}',
-        'cart' => '/cart',
-        'orders' => '/orders',
-        'order' => '/orders/{id}',
-        'wishlist' => '/wishlist',
-        'addresses' => '/addresses',
-        'profile' => '/profile',
-        'notifications' => '/notifications',
-        'terms' => '/terms',
-        'privacy' => '/policy',
-        'contact' => '/contact',
-        'login' => '/login',
-    ];
-
-    /**
-     * Screens that only make sense for a logged-in customer.
-     *
-     * @var list<string>
-     */
-    private const PRIVATE_PAGES = ['cart', 'orders', 'order', 'wishlist', 'addresses', 'profile', 'notifications'];
-
     public function __construct(
         private SettingsService $settings,
         private PricingService $pricing,
@@ -114,20 +90,6 @@ class ChatbotToolsService
                     'type' => 'object',
                     'properties' => [
                         'page' => ['type' => 'string', 'enum' => ['terms', 'privacy'], 'description' => 'terms is the terms and conditions / terms of use / usage policy (returns and cancellations are covered there if the store lists them); privacy is the privacy policy (what personal data is collected and how it is used).'],
-                    ],
-                    'required' => ['page'],
-                ],
-            ],
-            [
-                'name' => 'get_page_link',
-                'description' => 'Get the link that opens a screen of the app. Use it whenever the customer asks to go to, open or get a link to a page (a product, a category, their cart, orders, an order, wishlist, addresses, profile, notifications, the terms or privacy page, the contact page, login or home). The app shows the link as a "Click here" button under your reply, so tell the customer to tap the button below; do not write the url in your text.',
-                'inputSchema' => [
-                    'type' => 'object',
-                    'properties' => [
-                        'page' => ['type' => 'string', 'enum' => array_keys(self::PAGE_PATHS)],
-                        'product_id' => ['type' => 'integer', 'description' => 'Required for page=product. The id from search_products.'],
-                        'category_id' => ['type' => 'integer', 'description' => 'Required for page=category. The id from list_categories.'],
-                        'order_no' => ['type' => 'string', 'description' => "Required for page=order. The customer's order number, for example MKR-1234."],
                     ],
                     'required' => ['page'],
                 ],
@@ -272,13 +234,96 @@ class ChatbotToolsService
             'get_product_reviews' => $this->productReviews((int) ($input['product_id'] ?? 0), $input),
             'get_contact_info' => $this->contactInfo(),
             'get_app_info' => $this->appInfo(),
-            'get_page_link' => $this->pageLink($input, $user),
             'get_my_wishlist' => $user ? $this->wishlist($user) : self::loginRequired(),
             'get_my_addresses' => $user ? $this->addresses($user) : self::loginRequired(),
             'get_my_notifications' => $user ? $this->notifications($user, $input) : self::loginRequired(),
             'get_my_account' => $user ? $this->account($user) : self::loginRequired(),
             default => ['error' => "Unknown tool: {$name}"],
         };
+    }
+
+    /**
+     * The records a tool result is about, in the same format the rest of the
+     * API returns them (ProductResource, OrderResource, ...), so the app can
+     * show them with the components it already has. Tools that return a
+     * single piece of information (store info, a policy, a coupon check)
+     * give that object as the only item. Errors give an empty list.
+     *
+     * @param  array<string, mixed>  $result
+     * @return list<mixed>
+     */
+    public function displayData(string $tool, array $result, ?User $user): array
+    {
+        if (isset($result['error'])) {
+            return [];
+        }
+
+        return match ($tool) {
+            'search_products', 'get_best_sellers', 'get_my_wishlist' => $this->productResources(array_column($result['products'], 'id'), $user),
+            'get_current_offers' => $this->productResources(array_column($result['products_on_sale'], 'id'), $user),
+            'get_product_details' => $this->productResources([$result['id']], $user),
+            'list_categories' => CategoryResource::collection(
+                Category::query()->whereIn('id', array_column($result['categories'], 'id'))->orderBy('sort_order')->get()
+            )->resolve(request()),
+            'get_my_orders' => $this->orderResources($user, array_column($result['orders'], 'order_no')),
+            'get_order_details' => $this->orderResources($user, [$result['order_no']]),
+            'get_my_cart' => ($cart = Cart::query()->where('user_id', $user?->id)->first())
+                ? [(new CartResource($cart->load(['items.product.category', 'items.product.images', 'items.product.variants', 'items.variant', 'coupon'])))->resolve(request())]
+                : [],
+            'get_my_addresses' => AddressResource::collection(
+                $user->addresses()->whereIn('id', array_column($result['addresses'], 'id'))->orderByDesc('is_default')->get()
+            )->resolve(request()),
+            'get_my_notifications' => NotificationResource::collection(
+                $user->customNotifications()->whereIn('id', array_column($result['notifications'], 'id'))->latest()->get()
+            )->resolve(request()),
+            'get_product_reviews' => ReviewResource::collection(
+                ProductReview::query()->with('user')->whereIn('id', array_column($result['reviews'], 'id'))->latest()->get()
+            )->resolve(request()),
+            default => [$result],
+        };
+    }
+
+    /**
+     * Products as ProductResource arrays, in the order of the given ids.
+     *
+     * @param  list<int>  $ids
+     * @return list<array<string, mixed>>
+     */
+    private function productResources(array $ids, ?User $user): array
+    {
+        $products = Product::query()
+            ->with(['category', 'images', 'variants'])
+            ->when($user, fn (Builder $query) => $query->with([
+                'wishlistedBy' => fn ($query) => $query->where('user_id', $user->id),
+            ]))
+            ->whereIn('id', $ids)
+            ->get()
+            ->sortBy(fn (Product $product): int => (int) array_search($product->id, $ids, true))
+            ->values();
+
+        return ProductResource::collection($products)->resolve(request());
+    }
+
+    /**
+     * The customer's orders as OrderResource arrays, in the given order.
+     *
+     * @param  list<string>  $orderNumbers
+     * @return list<array<string, mixed>>
+     */
+    private function orderResources(?User $user, array $orderNumbers): array
+    {
+        if (! $user) {
+            return [];
+        }
+
+        $orders = $user->orders()
+            ->with(['items.product.category', 'items.product.images', 'items.product.variants', 'items.variant', 'address'])
+            ->whereIn('order_no', $orderNumbers)
+            ->get()
+            ->sortBy(fn (Order $order): int => (int) array_search($order->order_no, $orderNumbers, true))
+            ->values();
+
+        return OrderResource::collection($orders)->resolve(request());
     }
 
     /**
@@ -396,6 +441,7 @@ class ChatbotToolsService
                 ->limit(max(1, min(10, (int) ($input['limit'] ?? 5))))
                 ->get()
                 ->map(fn (ProductReview $review): array => [
+                    'id' => $review->id,
                     'rating' => $review->rating,
                     'title' => $review->title,
                     'body' => $review->body,
@@ -456,6 +502,7 @@ class ChatbotToolsService
                 ->orderByDesc('is_default')
                 ->get()
                 ->map(fn (Address $address): array => [
+                    'id' => $address->id,
                     'label' => $address->label,
                     'recipient_name' => $address->recipient_name,
                     'city' => $address->city,
@@ -481,6 +528,7 @@ class ChatbotToolsService
                 ->limit(max(1, min(10, (int) ($input['limit'] ?? 5))))
                 ->get()
                 ->map(fn (Notification $notification): array => [
+                    'id' => $notification->id,
                     'title' => $notification->title,
                     'body' => $notification->body,
                     'is_read' => $notification->isRead(),
@@ -682,83 +730,6 @@ class ChatbotToolsService
                 ->filter(fn (array $section): bool => filled($section['heading']) || filled($section['body']))
                 ->values()
                 ->all(),
-        ];
-    }
-
-    /**
-     * Build the link to an app screen, checking that the product, category
-     * or order exists (and that the order belongs to this customer).
-     *
-     * @param  array<string, mixed>  $input
-     * @return array<string, mixed>
-     */
-    private function pageLink(array $input, ?User $user): array
-    {
-        $page = (string) ($input['page'] ?? '');
-
-        if (! array_key_exists($page, self::PAGE_PATHS)) {
-            return ['error' => "Unknown page: {$page}"];
-        }
-
-        $replacements = [];
-        $title = __("api.chatbot.pages.{$page}");
-
-        if ($page === 'product') {
-            $product = Product::query()->where('is_active', true)->find((int) ($input['product_id'] ?? 0));
-
-            if (! $product) {
-                return ['error' => 'Product not found.'];
-            }
-
-            $replacements['{slug}'] = $product->slug;
-            $title = $product->name;
-        }
-
-        if ($page === 'category') {
-            $category = Category::query()->where('is_active', true)->find((int) ($input['category_id'] ?? 0));
-
-            if (! $category) {
-                return ['error' => 'Category not found.'];
-            }
-
-            $replacements['{slug}'] = $category->slug;
-            $title = $category->name;
-        }
-
-        if (in_array($page, self::PRIVATE_PAGES, true) && ! $user) {
-            return [...self::loginRequired(), 'login_link' => $this->link('login', __('api.chatbot.pages.login'))];
-        }
-
-        if ($page === 'order') {
-            $order = $user->orders()->where('order_no', trim((string) ($input['order_no'] ?? '')))->first();
-
-            if (! $order) {
-                return ['error' => 'No order with this number was found for this customer.'];
-            }
-
-            $replacements['{id}'] = (string) $order->id;
-            $title = __('api.chatbot.pages.order', ['order_no' => $order->order_no]);
-        }
-
-        return $this->link($page, (string) $title, $replacements);
-    }
-
-    /**
-     * A link payload: the page key, a readable title and the full url.
-     *
-     * @param  array<string, string>  $replacements
-     * @return array{page: string, title: string, url: string}
-     */
-    private function link(string $page, string $title, array $replacements = []): array
-    {
-        $path = strtr(self::PAGE_PATHS[$page], array_map('rawurlencode', $replacements));
-        $base = (string) config('services.chatbot.link_base');
-
-        return [
-            'page' => $page,
-            'title' => $title,
-            // A base ending in "/" (mukhamar://, https://site.com/) takes the path without its leading slash.
-            'url' => str_ends_with($base, '/') ? $base.ltrim($path, '/') : $base.$path,
         ];
     }
 
