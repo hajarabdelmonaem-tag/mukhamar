@@ -382,6 +382,23 @@ return [
         'back_to_messages' => 'العودة إلى الرسائل',
     ],
 
+    // Chatbot conversations
+    'chat_conversations' => [
+        'title' => 'المساعد الذكي',
+        'all' => 'كل المحادثات',
+        'info' => 'المحادثة',
+        'customer' => 'العميل',
+        'guest' => 'زائر',
+        'messages' => 'الرسائل',
+        'tokens' => 'التوكنز (دخول / خروج)',
+        'last_message_at' => 'آخر رسالة',
+        'customer_label' => 'العميل',
+        'assistant_label' => 'المساعد',
+        'deleted' => 'تم حذف المحادثة بنجاح.',
+        'back' => 'العودة إلى المحادثات',
+        'empty' => 'لا توجد محادثات بعد.',
+    ],
+
     // Users
     'users' => [
         'title' => 'المستخدمون',

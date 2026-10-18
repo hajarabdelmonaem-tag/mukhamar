@@ -28,6 +28,24 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'anthropic' => [
+        'key' => env('ANTHROPIC_API_KEY'),
+        'model' => env('ANTHROPIC_MODEL', 'claude-opus-5-5'),
+        'effort' => env('ANTHROPIC_EFFORT', 'low'),
+        'max_tokens' => (int) env('ANTHROPIC_MAX_TOKENS', 8000),
+        'timeout' => (float) env('ANTHROPIC_TIMEOUT', 60),
+    ],
+
+    'chatbot' => [
+        'enabled' => (bool) env('CHATBOT_ENABLED', true),
+        'driver' => env('CHATBOT_DRIVER', 'fake'),
+        'store_name' => env('CHATBOT_STORE_NAME', 'Mukhamar'),
+        'max_message_length' => (int) env('CHATBOT_MAX_MESSAGE_LENGTH', 1000),
+        'max_turns' => (int) env('CHATBOT_MAX_TURNS', 30),
+        'max_tool_rounds' => (int) env('CHATBOT_MAX_TOOL_ROUNDS', 5),
+        'rate_limit_per_minute' => (int) env('CHATBOT_RATE_LIMIT_PER_MINUTE', 10),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

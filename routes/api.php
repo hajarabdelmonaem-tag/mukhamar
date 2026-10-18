@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\AddressController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CartController;
 use App\Http\Controllers\Api\V1\CategoryController;
+use App\Http\Controllers\Api\V1\ChatbotController;
 use App\Http\Controllers\Api\V1\ContactController;
 use App\Http\Controllers\Api\V1\HomeController;
 use App\Http\Controllers\Api\V1\IntroController;
@@ -43,6 +44,12 @@ Route::prefix('v1')->group(function (): void {
 
     // Contact (public)
     Route::post('contact', [ContactController::class, 'store']);
+
+    // Chatbot (public; a bearer token unlocks order and cart answers)
+    Route::middleware('throttle:chatbot')->group(function (): void {
+        Route::post('chat', [ChatbotController::class, 'send']);
+        Route::get('chat/{conversation}', [ChatbotController::class, 'show']);
+    });
 
     Route::middleware('auth:sanctum')->group(function (): void {
         // Auth

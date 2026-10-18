@@ -19,6 +19,11 @@
             "key": "locale",
             "value": "en",
             "type": "string"
+        },
+        {
+            "key": "chatConversationId",
+            "value": "",
+            "type": "string"
         }
     ],
     "item": [
@@ -682,6 +687,169 @@
                                         }
                                     }
                                 }
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
+                    "name": "Chatbot",
+                    "description": "Chat assistant. Works for guests; send the bearer token to let it answer order and cart questions. The first reply saves chatConversationId; send it back as conversation_id to continue the same conversation (leave it empty to start a new one).",
+                    "item": [
+                        {
+                            "name": "Chat - Send Message (guest)",
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "const id = pm.response.json()?.data?.conversation_id;",
+                                            "if (id) { pm.collectionVariables.set('chatConversationId', id); }"
+                                        ]
+                                    }
+                                }
+                            ],
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Locale",
+                                        "value": "{{locale}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "auth": {
+                                    "type": "noauth"
+                                },
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"message\": \"عايزة عطر فيه عود\",\n    \"conversation_id\": \"{{chatConversationId}}\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/chat",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "chat"
+                                    ]
+                                },
+                                "description": "Send a message and get the assistant reply. conversation_id is optional."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Chat - Send Message (logged in)",
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "const id = pm.response.json()?.data?.conversation_id;",
+                                            "if (id) { pm.collectionVariables.set('chatConversationId', id); }"
+                                        ]
+                                    }
+                                }
+                            ],
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Locale",
+                                        "value": "{{locale}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{apiToken}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                },
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"message\": \"فين طلبي؟\",\n    \"conversation_id\": \"\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/chat",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "chat"
+                                    ]
+                                },
+                                "description": "Same endpoint with the bearer token, so order and cart tools can answer for this customer."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Chat - Conversation History",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "X-Locale",
+                                        "value": "{{locale}}",
+                                        "type": "text"
+                                    }
+                                ],
+                                "auth": {
+                                    "type": "noauth"
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/api/v1/chat/{{chatConversationId}}",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "chat",
+                                        "{{chatConversationId}}"
+                                    ]
+                                },
+                                "description": "List the visible messages of a conversation. Send the bearer token for a logged-in customer conversation."
                             },
                             "response": []
                         }

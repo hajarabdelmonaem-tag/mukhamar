@@ -382,6 +382,23 @@ return [
         'back_to_messages' => 'Back to Messages',
     ],
 
+    // Chatbot conversations
+    'chat_conversations' => [
+        'title' => 'Chat Assistant',
+        'all' => 'All Conversations',
+        'info' => 'Conversation',
+        'customer' => 'Customer',
+        'guest' => 'Guest',
+        'messages' => 'Messages',
+        'tokens' => 'Tokens (in / out)',
+        'last_message_at' => 'Last Message',
+        'customer_label' => 'Customer',
+        'assistant_label' => 'Assistant',
+        'deleted' => 'Conversation deleted successfully.',
+        'back' => 'Back to Conversations',
+        'empty' => 'No conversations yet.',
+    ],
+
     // Users
     'users' => [
         'title' => 'Users',
