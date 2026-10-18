@@ -101,6 +101,16 @@ it('answers a guest in fake mode using real product data', function (): void {
         ->and($conversation->visibleMessages()->count())->toBe(2);
 });
 
+it('replies with what it can help with when fake mode does not recognise a message', function (string $message): void {
+    Product::factory()->create();
+
+    $this->postJson('/api/v1/chat', ['message' => $message])
+        ->assertOk()
+        ->assertJsonPath('data.reply.text', __('api.chatbot.fake.header')."\n\n".__('api.chatbot.fake.help'));
+
+    expect(ChatMessage::query()->count())->toBe(2);
+})->with(['i need a help', 'مرحبا', 'hello']);
+
 it('sends the stored history back to the model when a conversation continues', function (): void {
     $client = scriptChatbot([textTurn('Hello!'), textTurn('Sure.')]);
 

@@ -35,6 +35,11 @@ class FakeChatbotClient implements ChatbotClient
     ];
 
     /**
+     * Words that mean the customer is asking about products in general.
+     */
+    private const PRODUCT_PATTERN = '/عطر|عطور|منتج|برفان|بخور|دهن|perfume|fragrance|product|scent|bakhoor|incense|recommend|ترشيح|رشح/iu';
+
+    /**
      * Words that mean the customer is asking about a coupon code.
      */
     private const COUPON_PATTERN = '/كوبون|كود|coupon|promo|voucher/iu';
@@ -94,7 +99,13 @@ class FakeChatbotClient implements ChatbotClient
         }
 
         $text = (string) collect($blocks)->firstWhere('type', 'text')['text'];
-        [$tool, $input] = self::route($text);
+        $route = self::route($text);
+
+        if ($route === null) {
+            return self::reply(__('api.chatbot.fake.header')."\n\n".__('api.chatbot.fake.help'));
+        }
+
+        [$tool, $input] = $route;
 
         return [
             'content' => [[
@@ -110,11 +121,12 @@ class FakeChatbotClient implements ChatbotClient
     }
 
     /**
-     * Pick the tool and input for a customer message.
+     * Pick the tool and input for a customer message, or null when the
+     * message is not a question the fake bot recognises (a greeting, "help").
      *
-     * @return array{0: string, 1: array<string, mixed>}
+     * @return array{0: string, 1: array<string, mixed>}|null
      */
-    private static function route(string $text): array
+    private static function route(string $text): ?array
     {
         if (preg_match(self::COUPON_PATTERN, $text)) {
             $code = self::couponCode($text);
@@ -132,7 +144,13 @@ class FakeChatbotClient implements ChatbotClient
             }
         }
 
-        return ['search_products', self::productSearchInput($text)];
+        $input = self::productSearchInput($text);
+
+        if (count($input) > 1 || preg_match(self::PRODUCT_PATTERN, $text)) {
+            return ['search_products', $input];
+        }
+
+        return null;
     }
 
     /**

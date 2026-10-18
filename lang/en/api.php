@@ -200,6 +200,7 @@ return [
             'new_mark' => 'new',
             'account_name' => 'Name: :name',
             'account_orders' => 'Orders: :count',
+            'help' => "Hi! I'm the store assistant. I can help you with:\n• Perfumes: recommendations, newest, cheapest, best sellers, notes like oud or rose\n• Offers and checking a coupon code\n• Shipping, tax and payment methods\n• Your orders, cart, wishlist and account (after logging in)\n• Contacting our support team\n\nWhat would you like to ask about?",
         ],
     ],
 
