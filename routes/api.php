@@ -75,6 +75,7 @@ Route::prefix('v1')->group(function (): void {
 
         // Cart
         Route::get('cart', [CartController::class, 'show']);
+        Route::get('cart/count', [CartController::class, 'count']);
         Route::post('cart/items', [CartController::class, 'addItem']);
         Route::put('cart/items/{item}', [CartController::class, 'updateItem']);
         Route::delete('cart/items/{item}', [CartController::class, 'removeItem']);

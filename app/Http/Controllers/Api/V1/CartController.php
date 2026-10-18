@@ -28,6 +28,20 @@ class CartController extends Controller
     }
 
     /**
+     * Get the number of items in the authenticated user's cart.
+     */
+    public function count(Request $request): JsonResponse
+    {
+        $cart = Cart::query()->where('user_id', $request->user()->id)->first();
+
+        return response()->json([
+            'data' => [
+                'items_count' => (int) ($cart?->items()->sum('quantity') ?? 0),
+            ],
+        ]);
+    }
+
+    /**
      * Add an item to the cart.
      */
     public function addItem(AddCartItemRequest $request): JsonResponse

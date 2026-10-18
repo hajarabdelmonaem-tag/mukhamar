@@ -161,6 +161,32 @@ it('adds an item to the cart and returns a summary', function (): void {
     ]);
 });
 
+it('returns the cart item count', function (): void {
+    $this->getJson('/api/v1/cart/count')
+        ->assertOk()
+        ->assertJsonPath('data.items_count', 0);
+
+    $this->postJson('/api/v1/cart/items', [
+        'product_id' => $this->product->id,
+        'quantity' => 2,
+    ])->assertOk();
+
+    $this->postJson('/api/v1/cart/items', [
+        'product_id' => Product::factory()->create()->id,
+        'quantity' => 1,
+    ])->assertOk();
+
+    $this->getJson('/api/v1/cart/count')
+        ->assertOk()
+        ->assertJsonPath('data.items_count', 3);
+});
+
+it('requires authentication for the cart item count', function (): void {
+    auth('sanctum')->forgetUser();
+
+    $this->getJson('/api/v1/cart/count')->assertUnauthorized();
+});
+
 it('accumulates quantity when the same product is added again', function (): void {
     $this->postJson('/api/v1/cart/items', [
         'product_id' => $this->product->id,
