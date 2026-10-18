@@ -18,12 +18,16 @@ class ChatbotController extends Controller
     /**
      * Send a customer message to the assistant and return its reply.
      * Works for guests and, with a bearer token, for logged-in customers.
+     * The reply (and the product data it uses) follows the language the
+     * message is written in, falling back to the app locale.
      */
     public function send(SendChatMessageRequest $request): JsonResponse
     {
         if (! config('services.chatbot.enabled')) {
             return response()->json(['message' => __('api.chatbot.disabled')], 503);
         }
+
+        app()->setLocale(ChatbotService::languageOf($request->message) ?? app()->getLocale());
 
         $user = $request->user('sanctum');
 

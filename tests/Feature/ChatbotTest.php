@@ -17,6 +17,7 @@ use App\Models\Setting;
 use App\Models\User;
 use App\Models\Wishlist;
 use App\Services\ChatbotClient;
+use App\Services\ChatbotService;
 use App\Services\ChatbotToolsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -92,7 +93,7 @@ it('answers a guest in fake mode using real product data', function (): void {
         ->assertJsonPath('data.reply.role', 'assistant');
 
     expect($response->json('data.reply.text'))
-        ->toContain('Royal Oud')
+        ->toContain('عود ملكي')
         ->not->toContain('{"');
 
     $conversation = ChatConversation::query()->where('uuid', $response->json('data.conversation_id'))->firstOrFail();
@@ -110,6 +111,38 @@ it('replies with what it can help with when fake mode does not recognise a messa
 
     expect(ChatMessage::query()->count())->toBe(2);
 })->with(['i need a help', 'مرحبا', 'hello']);
+
+it('replies in the language of the message, not the app locale', function (string $locale, string $message, string $expectedLanguage, string $expectedName): void {
+    Product::factory()->create(['name' => ['en' => 'Royal Oud', 'ar' => 'عود ملكي']]);
+
+    $reply = $this->withHeader('X-Locale', $locale)
+        ->postJson('/api/v1/chat', ['message' => $message])
+        ->assertOk()
+        ->json('data.reply.text');
+
+    expect($reply)
+        ->toStartWith(trans('api.chatbot.fake.header', locale: $expectedLanguage))
+        ->toContain($expectedName);
+})->with([
+    'arabic message, english app' => ['en', 'عايزة عطر', 'ar', 'عود ملكي'],
+    'english message, arabic app' => ['ar', 'I want a perfume', 'en', 'Royal Oud'],
+]);
+
+it('keeps the app locale when a message has no letters', function (): void {
+    $this->withHeader('X-Locale', 'ar')
+        ->postJson('/api/v1/chat', ['message' => '123'])
+        ->assertOk()
+        ->assertJsonPath('data.reply.text', trans('api.chatbot.fake.header', locale: 'ar')."\n\n".trans('api.chatbot.fake.help', locale: 'ar'));
+});
+
+it('detects the language from the dominant alphabet', function (string $text, ?string $language): void {
+    expect(ChatbotService::languageOf($text))->toBe($language);
+})->with([
+    ['الكود SAVE10 شغال؟', 'ar'],
+    ['is the oud perfume in stock', 'en'],
+    ['؟؟ 123', 'ar'],
+    ['123 !!', null],
+]);
 
 it('sends the stored history back to the model when a conversation continues', function (): void {
     $client = scriptChatbot([textTurn('Hello!'), textTurn('Sure.')]);
@@ -194,28 +227,28 @@ it('returns the most recently added product first when sorting by newest', funct
 });
 
 it('answers which product was added last in fake mode', function (): void {
-    Product::factory()->create(['name' => ['en' => 'Old Featured', 'ar' => 'قديم'], 'is_featured' => true]);
-    Product::factory()->create(['name' => ['en' => 'Brand New Oud', 'ar' => 'عود جديد'], 'is_featured' => false]);
+    Product::factory()->create(['name' => ['en' => 'Old Featured', 'ar' => 'المميز القديم'], 'is_featured' => true]);
+    Product::factory()->create(['name' => ['en' => 'Brand New Oud', 'ar' => 'الإصدار الجديد'], 'is_featured' => false]);
 
     $reply = $this->postJson('/api/v1/chat', ['message' => 'ايه اخر منتج اتضاف؟'])
         ->assertOk()
         ->json('data.reply.text');
 
-    expect($reply)->toContain('Brand New Oud')->not->toContain('Old Featured');
+    expect($reply)->toContain('الإصدار الجديد')->not->toContain('المميز القديم');
 });
 
 it('reads price limits and notes from a product question in fake mode', function (): void {
-    Product::factory()->create(['name' => ['en' => 'Cheap Oud', 'ar' => 'عود'], 'price' => 150, 'base_notes' => ['en' => 'Oud', 'ar' => 'عود']]);
-    Product::factory()->create(['name' => ['en' => 'Pricey Oud', 'ar' => 'عود غالي'], 'price' => 900, 'base_notes' => ['en' => 'Oud', 'ar' => 'عود']]);
-    Product::factory()->create(['name' => ['en' => 'Cheap Rose', 'ar' => 'ورد'], 'price' => 120, 'top_notes' => ['en' => 'Rose', 'ar' => 'ورد'], 'heart_notes' => ['en' => 'Rose', 'ar' => 'ورد'], 'base_notes' => ['en' => 'Musk', 'ar' => 'مسك']]);
+    Product::factory()->create(['name' => ['en' => 'Cheap Oud', 'ar' => 'سحر الشرق'], 'price' => 150, 'base_notes' => ['en' => 'Oud', 'ar' => 'عود']]);
+    Product::factory()->create(['name' => ['en' => 'Pricey Oud', 'ar' => 'فخامة الملوك'], 'price' => 900, 'base_notes' => ['en' => 'Oud', 'ar' => 'عود']]);
+    Product::factory()->create(['name' => ['en' => 'Cheap Rose', 'ar' => 'نسمة الربيع'], 'price' => 120, 'top_notes' => ['en' => 'Rose', 'ar' => 'ورد'], 'heart_notes' => ['en' => 'Rose', 'ar' => 'ورد'], 'base_notes' => ['en' => 'Musk', 'ar' => 'مسك']]);
 
     $reply = $this->postJson('/api/v1/chat', ['message' => 'عايزة عطر عود تحت ٣٠٠'])
         ->assertOk()
         ->json('data.reply.text');
 
-    expect($reply)->toContain('Cheap Oud')
-        ->not->toContain('Pricey Oud')
-        ->not->toContain('Cheap Rose');
+    expect($reply)->toContain('سحر الشرق')
+        ->not->toContain('فخامة الملوك')
+        ->not->toContain('نسمة الربيع');
 });
 
 it('lists only products with the bestseller badge as best sellers', function (): void {
@@ -333,7 +366,7 @@ it('routes coupon, offer and contact questions in fake mode', function (): void 
     expect($this->postJson('/api/v1/chat', ['message' => 'الكود SAVE10 شغال؟'])->json('data.reply.text'))
         ->toContain(__('api.chatbot.fake.coupon_valid', ['code' => 'SAVE10', 'discount' => '10%']))
         ->and($this->postJson('/api/v1/chat', ['message' => 'فيه عروض؟'])->json('data.reply.text'))
-        ->toContain('Sale Oud')
+        ->toContain('عود مخفض')
         ->and($this->postJson('/api/v1/chat', ['message' => 'عايزة اتواصل معاكم'])->json('data.reply.text'))
         ->toContain('+966 50 000 0000');
 });
